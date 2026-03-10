@@ -3,7 +3,7 @@ import PendulumSlider from '@/components/PendulumSlider';
 import NaoSeiFlow from '@/components/NaoSeiFlow';
 import { saveEntry, getEntries, getTodayKey, getCurrentPeriod, PERIOD_CONFIG, DayPeriod } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
-import { Check, Sunrise, Sun, Moon } from 'lucide-react';
+import { Sunrise, Sun, Moon } from 'lucide-react';
 
 const PERIOD_ICONS: Record<DayPeriod, React.ReactNode> = {
   morning: <Sunrise size={16} />,
@@ -16,6 +16,7 @@ const PenduloPage = () => {
   const [position, setPosition] = useState(50);
   const [showNaoSei, setShowNaoSei] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [hasMoved, setHasMoved] = useState(false);
   const [period, setPeriod] = useState<DayPeriod>(getCurrentPeriod());
 
   useEffect(() => {
@@ -28,15 +29,18 @@ const PenduloPage = () => {
       setPosition(50);
       setSaved(false);
     }
+    setHasMoved(false);
   }, [todayKey, period]);
 
   const handleSave = () => {
     saveEntry({ date: todayKey, position, period });
     setSaved(true);
+    setHasMoved(false);
   };
 
   const handleNaoSeiResult = (pos: number) => {
     setPosition(pos);
+    setHasMoved(true);
     setShowNaoSei(false);
   };
 
@@ -48,13 +52,16 @@ const PenduloPage = () => {
           Onde está seu pêndulo mental agora?
         </h1>
         <p className="text-sm text-muted-foreground mb-6 text-center">
-          Arraste para posicionar
+          Toque em 'Descobrir' ou arraste o pêndulo para registrar
         </p>
 
         {/* Pendulum */}
-        <PendulumSlider value={position} onChange={(v) => { setPosition(v); setSaved(false); }} />
+        <PendulumSlider
+          value={position}
+          onChange={(v) => { setPosition(v); setSaved(false); setHasMoved(true); }}
+        />
 
-        {/* Save button */}
+        {/* Buttons / saved state */}
         <div className="mt-10">
           {saved ? (
             <div className="flex flex-col items-center gap-2">
@@ -67,24 +74,26 @@ const PenduloPage = () => {
               </span>
             </div>
           ) : (
-            <Button
-              onClick={handleSave}
-              className="rounded-full px-8 h-11 text-sm font-medium"
-            >
-              Registrar
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowNaoSei(true)}
+                className="w-36 rounded-full h-11 text-sm font-medium"
+              >
+                Descobrir
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={!hasMoved}
+                className={`w-36 rounded-full h-11 text-sm font-medium transition-opacity ${
+                  !hasMoved ? 'opacity-35' : ''
+                }`}
+              >
+                Registrar
+              </Button>
+            </div>
           )}
         </div>
-
-        {!saved && (
-          <Button
-            variant="ghost"
-            onClick={() => setShowNaoSei(true)}
-            className="mt-4 rounded-full px-6 h-9 text-xs text-muted-foreground/60 hover:text-muted-foreground"
-          >
-            Não sei dizer...
-          </Button>
-        )}
 
         {/* Period selector */}
         <div className="flex items-center gap-1 bg-muted rounded-full p-1 mt-6">
