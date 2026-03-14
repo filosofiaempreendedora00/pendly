@@ -10,6 +10,8 @@ export interface PendulumEntry {
   timestamp?: string; // ISO datetime of when saved
   note?: string; // optional text note
   emotions?: string[]; // 1–3 emotions selected in the check-in modal
+  photo?: string; // base64 data URL of an attached photo
+  audio?: string; // base64 data URL of a recorded audio note
 }
 
 // ─── 5 status levels for emotion mapping ─────────────────────────────────────

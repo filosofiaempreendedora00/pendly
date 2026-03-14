@@ -192,8 +192,8 @@ const PenduloPage = () => {
     setShowEmotionModal(true);
   };
 
-  const handleEmotionConfirm = (emotions: string[]) => {
-    addEntry({ date: todayKey, position, emotions });
+  const handleEmotionConfirm = (emotions: string[], note?: string, photo?: string, audio?: string) => {
+    addEntry({ date: todayKey, position, emotions, note, photo, audio });
     setSaved(true);
     setHasMoved(false);
     setShowEmotionModal(false);
@@ -218,7 +218,7 @@ const PenduloPage = () => {
           Arraste o pêndulo para registrar seu humor
         </p>
 
-        {/* Pêndulo + label + barrinha */}
+        {/* Pêndulo + label */}
         <div className="flex-1 flex flex-col items-center w-full min-h-0 pb-3 gap-3">
 
           {/* Pêndulo visual — cresce até no máximo 280px */}
@@ -264,41 +264,43 @@ const PenduloPage = () => {
             {moodLabel}
           </div>
 
-          {/* ── Barrinha ── */}
-          <div className="w-full max-w-xs">
-            <div
-              ref={trackRef}
-              onPointerDown={onTrackDown}
-              onPointerMove={onTrackMove}
-              onPointerUp={onTrackUp}
-              className="relative h-3 rounded-full cursor-pointer touch-none select-none"
-              style={{
-                background: `linear-gradient(to right,
-                  hsl(0,72%,52%) 0%,
-                  hsl(16,75%,54%) 25%,
-                  hsl(215,50%,58%) 50%,
-                  hsl(148,52%,44%) 75%,
-                  hsl(143,68%,33%) 100%)`,
-              }}
-            >
-              <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-[3px] border-background shadow-md pointer-events-none"
-                style={{
-                  left: `${position}%`,
-                  backgroundColor: bobColor,
-                  transition: isDragging ? 'none' : 'left 400ms cubic-bezier(0.25,0.46,0.45,0.94), background-color 80ms',
-                }}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-[10px] font-medium text-muted-foreground/50 select-none">
-              <span>Muuuito mal</span>
-              <span>Mais ou menos</span>
-              <span>Muuuito bem</span>
-            </div>
-          </div>
-
         </div>
 
+      </div>
+
+      {/* ── Barrinha — ancorada acima do botão ── */}
+      <div className="px-6 pb-4 shrink-0">
+        <div className="w-full max-w-xs mx-auto">
+          <div
+            ref={trackRef}
+            onPointerDown={onTrackDown}
+            onPointerMove={onTrackMove}
+            onPointerUp={onTrackUp}
+            className="relative h-3 rounded-full cursor-pointer touch-none select-none"
+            style={{
+              background: `linear-gradient(to right,
+                hsl(0,72%,52%) 0%,
+                hsl(16,75%,54%) 25%,
+                hsl(215,50%,58%) 50%,
+                hsl(148,52%,44%) 75%,
+                hsl(143,68%,33%) 100%)`,
+            }}
+          >
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-[3px] border-background shadow-md pointer-events-none"
+              style={{
+                left: `${position}%`,
+                backgroundColor: bobColor,
+                transition: isDragging ? 'none' : 'left 400ms cubic-bezier(0.25,0.46,0.45,0.94), background-color 80ms',
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-[10px] font-medium text-muted-foreground/50 select-none">
+            <span>Muuuito mal</span>
+            <span>Mais ou menos</span>
+            <span>Muuuito bem</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Botão registrar — logo acima do menu ── */}

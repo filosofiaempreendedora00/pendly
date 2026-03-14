@@ -148,7 +148,7 @@ const DayCard = ({ date, entries }: { date: string; entries: PendulumEntry[] }) 
           const color      = getBobColor(entry.position);
           const label      = getMoodLabel(entry.position);
           const time       = formatTime(entry);
-          const hasDetails = !!entry.note;
+          const hasDetails = !!(entry.note || entry.photo || entry.audio);
           return (
             <EntryInline
               key={`${entry.timestamp ?? entry.period}-${i}`}
@@ -188,11 +188,25 @@ const EntryInline = ({
           <FaceSvg value={entry.position} />
         </div>
 
-        {/* Label + horário */}
+        {/* Label + horário + tags de emoção */}
         <div className="flex-1 min-w-0">
-          <span className="text-[15px] font-semibold" style={{ color }}>{label}</span>
-          {time && (
-            <span className="ml-2 text-xs text-muted-foreground/40 font-medium">{time}</span>
+          <div className="flex items-baseline gap-0">
+            <span className="text-[15px] font-semibold" style={{ color }}>{label}</span>
+            {time && (
+              <span className="ml-2 text-xs text-muted-foreground/40 font-medium">{time}</span>
+            )}
+          </div>
+          {entry.emotions && entry.emotions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {entry.emotions.map(emotion => (
+                <span
+                  key={emotion}
+                  className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none bg-muted text-muted-foreground/60 border border-border/50"
+                >
+                  {emotion}
+                </span>
+              ))}
+            </div>
           )}
         </div>
 
@@ -208,8 +222,20 @@ const EntryInline = ({
       </div>
 
       {expanded && hasDetails && (
-        <div className="mt-2 ml-[3.5rem] text-sm text-muted-foreground leading-relaxed">
-          {entry.note && <p>{entry.note}</p>}
+        <div className="mt-2 ml-[3.5rem] flex flex-col gap-2.5">
+          {entry.note && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{entry.note}</p>
+          )}
+          {entry.photo && (
+            <img
+              src={entry.photo}
+              alt=""
+              className="rounded-xl max-h-48 w-full object-cover"
+            />
+          )}
+          {entry.audio && (
+            <audio src={entry.audio} controls className="w-full h-8" />
+          )}
         </div>
       )}
     </div>
