@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { saveEntry, getEntries, getTodayKey, getCurrentPeriod, PERIOD_CONFIG, DayPeriod } from '@/lib/pendulum';
+import { addEntry, getEntries, getTodayKey } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
 
 // ─── Data / hora ao vivo ─────────────────────────────────────────────────────
@@ -142,18 +142,19 @@ const PenduloPage = () => {
   const [isDraggingBob,   setIsDraggingBob]   = useState(false);
 
   const todayKey = getTodayKey();
-  const period   = getCurrentPeriod() as DayPeriod;
   const [position, setPosition] = useState(50);
   const [saved,    setSaved]    = useState(false);
   const [hasMoved, setHasMoved] = useState(false);
 
   useEffect(() => {
-    const entries = getEntries();
-    const entry = entries.find(e => e.date === todayKey && e.period === period);
-    if (entry) { setPosition(entry.position); setSaved(true); }
-    else        { setPosition(50); setSaved(false); }
+    const entries = getEntries().filter(e => e.date === todayKey);
+    const last = entries.sort((a, b) =>
+      (b.timestamp ?? '').localeCompare(a.timestamp ?? '')
+    )[0];
+    if (last) { setPosition(last.position); setSaved(true); }
+    else       { setPosition(50); setSaved(false); }
     setHasMoved(false);
-  }, [todayKey, period]);
+  }, [todayKey]);
 
   const updateFromPointer = useCallback((clientX: number) => {
     const track = trackRef.current;
@@ -185,7 +186,7 @@ const PenduloPage = () => {
   const isDragging = isDraggingTrack || isDraggingBob;
 
   const handleSave = () => {
-    saveEntry({ date: todayKey, position, period });
+    addEntry({ date: todayKey, position });
     setSaved(true);
     setHasMoved(false);
   };
