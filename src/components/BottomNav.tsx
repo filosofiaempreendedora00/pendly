@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Scale, TrendingUp } from 'lucide-react';
+import { Scale, TrendingUp, Shirt } from 'lucide-react';
 
 const PendulumIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeWidth?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -13,6 +13,7 @@ const tabs = [
   { path: '/', icon: PendulumIcon, label: 'Pêndulo' },
   { path: '/equilibrio', icon: Scale, label: 'Equilibre-se' },
   { path: '/padroes', icon: TrendingUp, label: 'Evolução' },
+  { path: '/cabide', icon: Shirt, label: 'Cabide' },
 ];
 
 const BottomNav = () => {
@@ -21,7 +22,7 @@ const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-md grid-cols-3 items-center py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="mx-auto grid max-w-md grid-cols-4 items-center py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {tabs.map(({ path, icon: Icon, label }) => {
           const active = location.pathname === path;
           return (
