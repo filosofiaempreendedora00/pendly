@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { addEntry, getEntries, getTodayKey } from '@/lib/pendulum';
+import { addEntry, getEntries, getTodayKey, getStatusLevel } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
+import EmotionModal from '@/components/EmotionModal';
 
 // ─── Data / hora ao vivo ─────────────────────────────────────────────────────
 const DIAS   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -23,20 +24,20 @@ const DateTimeWidget = () => {
   const mm   = String(now.getMinutes()).padStart(2, '0');
 
   return (
-    <div className="flex flex-col items-center mb-6 select-none">
-      <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/40 font-semibold mb-0.5">
+    <div className="flex flex-col items-center mb-2 select-none">
+      <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground/40 font-semibold mb-0.5">
         {dia}
       </span>
       <div className="flex items-baseline gap-1">
-        <span className="text-[3rem] font-extralight leading-none tracking-tight text-foreground/80">
+        <span className="text-[2rem] font-extralight leading-none tracking-tight text-foreground/80">
           {hh}
         </span>
-        <span className="text-[2rem] font-extralight leading-none text-foreground/40 -mt-1">:</span>
-        <span className="text-[3rem] font-extralight leading-none tracking-tight text-foreground/80">
+        <span className="text-[1.3rem] font-extralight leading-none text-foreground/40 -mt-1">:</span>
+        <span className="text-[2rem] font-extralight leading-none tracking-tight text-foreground/80">
           {mm}
         </span>
       </div>
-      <span className="text-[11px] text-muted-foreground/40 mt-0.5">
+      <span className="text-[10px] text-muted-foreground/40 mt-0.5">
         {data}
       </span>
     </div>
@@ -142,9 +143,10 @@ const PenduloPage = () => {
   const [isDraggingBob,   setIsDraggingBob]   = useState(false);
 
   const todayKey = getTodayKey();
-  const [position, setPosition] = useState(50);
-  const [saved,    setSaved]    = useState(false);
-  const [hasMoved, setHasMoved] = useState(false);
+  const [position,          setPosition]          = useState(50);
+  const [saved,             setSaved]             = useState(false);
+  const [hasMoved,          setHasMoved]          = useState(false);
+  const [showEmotionModal,  setShowEmotionModal]  = useState(false);
 
   useEffect(() => {
     const entries = getEntries().filter(e => e.date === todayKey);
@@ -185,10 +187,16 @@ const PenduloPage = () => {
 
   const isDragging = isDraggingTrack || isDraggingBob;
 
+  // Opens the emotion modal — actual save happens in handleEmotionConfirm
   const handleSave = () => {
-    addEntry({ date: todayKey, position });
+    setShowEmotionModal(true);
+  };
+
+  const handleEmotionConfirm = (emotions: string[]) => {
+    addEntry({ date: todayKey, position, emotions });
     setSaved(true);
     setHasMoved(false);
+    setShowEmotionModal(false);
   };
 
   const bobColor  = getBobColor(position);
@@ -196,24 +204,25 @@ const PenduloPage = () => {
   const moodLabel = getMoodLabel(position);
 
   return (
-    <div className="flex flex-col min-h-screen pb-[88px]">
+    <div className="flex flex-col h-[100dvh] pb-[88px]">
 
       {/* ── Área superior: data/hora + header + pêndulo + label ── */}
-      <div className="flex-1 flex flex-col items-center px-6 pt-8">
+      <div className="flex-1 flex flex-col items-center px-6 pt-5 min-h-0">
 
         <DateTimeWidget />
 
-        <h1 className="text-[1.9rem] font-semibold text-foreground mb-1 tracking-tight text-center leading-tight">
+        <h1 className="text-[1.6rem] font-semibold text-foreground mb-1 tracking-tight text-center leading-tight">
           Como você tá agora?
         </h1>
-        <p className="text-sm text-muted-foreground mb-6 text-center">
+        <p className="text-sm text-muted-foreground mb-4 text-center">
           Arraste o pêndulo para registrar seu humor
         </p>
 
         {/* Pêndulo + label + barrinha */}
-        <div className="flex-1 flex flex-col items-center pt-2 w-full min-h-[16rem]">
+        <div className="flex-1 flex flex-col items-center w-full min-h-0 pb-3 gap-3">
 
-          <div className="relative h-72 w-full flex items-start justify-center overflow-hidden">
+          {/* Pêndulo visual — cresce até no máximo 280px */}
+          <div className="flex-1 relative w-full flex items-start justify-center overflow-hidden" style={{ maxHeight: '280px' }}>
             <div className="absolute top-0 w-4 h-4 rounded-full bg-muted-foreground/30 z-10" />
             <div
               className="absolute top-4 origin-top"
@@ -222,7 +231,10 @@ const PenduloPage = () => {
                 transition: isDragging ? 'none' : 'transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               }}
             >
-              <div className="w-px h-52 bg-gradient-to-b from-muted-foreground/40 to-muted-foreground/20 mx-auto" />
+              <div
+                className="w-px bg-gradient-to-b from-muted-foreground/40 to-muted-foreground/20 mx-auto"
+                style={{ height: 'clamp(80px, 18dvh, 180px)' }}
+              />
               <div className="relative w-14 h-14 mx-auto">
                 <div
                   className="absolute -inset-5 rounded-full cursor-grab active:cursor-grabbing touch-none select-none z-10"
@@ -244,9 +256,6 @@ const PenduloPage = () => {
             </div>
           </div>
 
-          {/* Spacer igual acima e abaixo do label */}
-          <div className="flex-1" />
-
           {/* Label do humor */}
           <div
             className="text-xl font-semibold text-center transition-all duration-200 min-h-[1.75rem]"
@@ -255,40 +264,38 @@ const PenduloPage = () => {
             {moodLabel}
           </div>
 
-          <div className="flex-1" />
-
           {/* ── Barrinha ── */}
-          <div className="w-full max-w-xs mb-6">
-          <div
-            ref={trackRef}
-            onPointerDown={onTrackDown}
-            onPointerMove={onTrackMove}
-            onPointerUp={onTrackUp}
-            className="relative h-3 rounded-full cursor-pointer touch-none select-none"
-            style={{
-              background: `linear-gradient(to right,
-                hsl(0,72%,52%) 0%,
-                hsl(16,75%,54%) 25%,
-                hsl(215,50%,58%) 50%,
-                hsl(148,52%,44%) 75%,
-                hsl(143,68%,33%) 100%)`,
-            }}
-          >
+          <div className="w-full max-w-xs">
             <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-[3px] border-background shadow-md pointer-events-none"
+              ref={trackRef}
+              onPointerDown={onTrackDown}
+              onPointerMove={onTrackMove}
+              onPointerUp={onTrackUp}
+              className="relative h-3 rounded-full cursor-pointer touch-none select-none"
               style={{
-                left: `${position}%`,
-                backgroundColor: bobColor,
-                transition: isDragging ? 'none' : 'left 400ms cubic-bezier(0.25,0.46,0.45,0.94), background-color 80ms',
+                background: `linear-gradient(to right,
+                  hsl(0,72%,52%) 0%,
+                  hsl(16,75%,54%) 25%,
+                  hsl(215,50%,58%) 50%,
+                  hsl(148,52%,44%) 75%,
+                  hsl(143,68%,33%) 100%)`,
               }}
-            />
+            >
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-[3px] border-background shadow-md pointer-events-none"
+                style={{
+                  left: `${position}%`,
+                  backgroundColor: bobColor,
+                  transition: isDragging ? 'none' : 'left 400ms cubic-bezier(0.25,0.46,0.45,0.94), background-color 80ms',
+                }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-[10px] font-medium text-muted-foreground/50 select-none">
+              <span>Muuuito mal</span>
+              <span>Mais ou menos</span>
+              <span>Muuuito bem</span>
+            </div>
           </div>
-          <div className="flex justify-between mt-2 text-[10px] font-medium text-muted-foreground/50 select-none">
-            <span>Muuuito mal</span>
-            <span>Mais ou menos</span>
-            <span>Muuuito bem</span>
-          </div>
-        </div>
 
         </div>
 
@@ -312,6 +319,15 @@ const PenduloPage = () => {
           </Button>
         )}
       </div>
+
+      {/* ── Modal de emoções ── */}
+      <EmotionModal
+        isOpen={showEmotionModal}
+        onClose={() => setShowEmotionModal(false)}
+        onConfirm={handleEmotionConfirm}
+        statusLevel={getStatusLevel(position)}
+        bobColor={bobColor}
+      />
 
     </div>
   );

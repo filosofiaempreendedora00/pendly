@@ -9,7 +9,63 @@ export interface PendulumEntry {
   period?: DayPeriod; // optional period for sub-entries
   timestamp?: string; // ISO datetime of when saved
   note?: string; // optional text note
+  emotions?: string[]; // 1–3 emotions selected in the check-in modal
 }
+
+// ─── 5 status levels for emotion mapping ─────────────────────────────────────
+export type StatusLevel =
+  | 'muuuito-mal'
+  | 'mal'
+  | 'mais-ou-menos'
+  | 'bem'
+  | 'muuuito-bem';
+
+export function getStatusLevel(position: number): StatusLevel {
+  if (position <= 33) return 'muuuito-mal';
+  if (position <= 44) return 'mal';
+  if (position <= 56) return 'mais-ou-menos';
+  if (position <= 78) return 'bem';
+  return 'muuuito-bem';
+}
+
+export const CONTEXTUAL_EMOTIONS: Record<StatusLevel, string[]> = {
+  'muuuito-mal': [
+    'tristeza', 'ansiedade', 'angústia', 'desespero',
+    'medo', 'raiva', 'pânico', 'culpa',
+    'vergonha', 'frustração', 'vazio', 'impotência',
+  ],
+  'mal': [
+    'tristeza', 'ansiedade', 'preocupação', 'raiva',
+    'frustração', 'insegurança', 'desânimo', 'decepção',
+    'tensão', 'insatisfação', 'melancolia', 'autocobrança',
+  ],
+  'mais-ou-menos': [
+    'normal', 'cansaço', 'tédio', 'apatia',
+    'dúvida', 'confusão', 'indecisão', 'dispersão',
+    'curiosidade', 'reflexão', 'contemplação', 'expectativa',
+  ],
+  'bem': [
+    'alegria', 'tranquilidade', 'satisfação', 'gratidão',
+    'leveza', 'confiança', 'esperança', 'motivação',
+    'entusiasmo', 'serenidade', 'inspiração', 'orgulho',
+  ],
+  'muuuito-bem': [
+    'alegria', 'empolgação', 'euforia', 'gratidão',
+    'realização', 'entusiasmo', 'plenitude', 'orgulho',
+    'encantamento', 'admiração', 'inspiração', 'paixão',
+  ],
+};
+
+// Shown only via "+ Ver mais emoções" — order varies by status so the most
+// intuitive emotions appear first. Duplicates of the active contextual list
+// are filtered out at render time.
+export const ORDERED_UNIVERSAL_EMOTIONS: Record<StatusLevel, string[]> = {
+  'muuuito-mal':   ['cansaço', 'sobrecarga', 'inquietação', 'reflexão',    'curiosidade', 'nostalgia', 'surpresa', 'contemplação', 'alívio',    'clareza'],
+  'mal':           ['cansaço', 'sobrecarga', 'inquietação', 'curiosidade', 'reflexão',    'nostalgia', 'surpresa', 'contemplação', 'clareza',   'alívio'],
+  'mais-ou-menos': ['cansaço', 'curiosidade', 'reflexão',  'contemplação', 'surpresa',    'nostalgia', 'clareza',  'inquietação',  'sobrecarga', 'alívio'],
+  'bem':           ['curiosidade', 'clareza', 'reflexão',  'contemplação', 'surpresa',    'nostalgia', 'alívio',   'cansaço',      'inquietação', 'sobrecarga'],
+  'muuuito-bem':   ['curiosidade', 'contemplação', 'surpresa', 'clareza',  'reflexão',    'nostalgia', 'alívio',   'cansaço',      'inquietação', 'sobrecarga'],
+};
 
 export const ZONES = [
   { label: 'Autopiedade', range: [0, 15], type: 'danger' as const },
