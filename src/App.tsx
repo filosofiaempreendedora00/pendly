@@ -7,6 +7,7 @@ import PenduloPage from "./pages/PenduloPage";
 import EquilibrioPage from "./pages/EquilibrioPage";
 import PadroesPage from "./pages/PadroesPage";
 import CabidePage from "./pages/CabidePage";
+import BibliotecaPage from "./pages/BibliotecaPage";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<PenduloPage />} />
             <Route path="/equilibrio" element={<EquilibrioPage />} />
+            <Route path="/biblioteca" element={<BibliotecaPage />} />
             <Route path="/padroes" element={<PadroesPage />} />
             <Route path="/cabide" element={<CabidePage />} />
             <Route path="*" element={<NotFound />} />

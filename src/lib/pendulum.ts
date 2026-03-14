@@ -7,6 +7,8 @@ export interface PendulumEntry {
   date: string; // ISO date string
   position: number; // 0-100
   period?: DayPeriod; // optional period for sub-entries
+  timestamp?: string; // ISO datetime of when saved
+  note?: string; // optional text note
 }
 
 export const ZONES = [
@@ -47,14 +49,21 @@ export function getCurrentPeriod(): DayPeriod {
 export function saveEntry(entry: PendulumEntry) {
   const entries = getEntries();
   const period = entry.period || getCurrentPeriod();
-  const entryWithPeriod = { ...entry, period };
-  
+  const entryWithPeriod = { ...entry, period, timestamp: new Date().toISOString() };
+
   const existingIdx = entries.findIndex(e => e.date === entry.date && e.period === period);
   if (existingIdx >= 0) {
     entries[existingIdx] = entryWithPeriod;
   } else {
     entries.push(entryWithPeriod);
   }
+  localStorage.setItem('pendly-entries', JSON.stringify(entries));
+}
+
+// Sempre adiciona um novo registro (sem deduplicação por período)
+export function addEntry(entry: Omit<PendulumEntry, 'timestamp'>) {
+  const entries = getEntries();
+  entries.push({ ...entry, timestamp: new Date().toISOString() });
   localStorage.setItem('pendly-entries', JSON.stringify(entries));
 }
 
