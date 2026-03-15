@@ -270,7 +270,8 @@ const EmotionModal = ({
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder="Escreva aqui..."
-                className="w-full rounded-2xl bg-muted/50 border border-border/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-border/60 min-h-[96px]"
+                className="w-full rounded-2xl bg-muted/50 border border-border/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-border/60 min-h-[96px]"
+                style={{ fontSize: '16px' }}
               />
 
               {/* Photo */}

@@ -83,15 +83,19 @@
 }
 
 /* ── Animações do InsightPopup ───────────────────────────────────────────── */
-@keyframes draw-check {
-  from { stroke-dashoffset: 32; }
-  to   { stroke-dashoffset: 0;  }
+@keyframes draw-check-loop {
+  0%   { stroke-dashoffset: 32; opacity: 1; }
+  55%  { stroke-dashoffset: 0;  opacity: 1; }
+  90%  { stroke-dashoffset: 0;  opacity: 0; }
+  91%  { stroke-dashoffset: 32; opacity: 0; }
+  100% { stroke-dashoffset: 32; opacity: 0; }
 }
 
 .checkmark-path {
   stroke-dasharray: 32;
   stroke-dashoffset: 32;
-  animation: draw-check 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+  opacity: 0;
+  animation: draw-check-loop 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s infinite;
 }
 
 @keyframes confetti-burst {
@@ -113,13 +117,17 @@
   100% { transform: scale(1);   opacity: 1; }
 }
 
-@keyframes check-breathe {
-  0%, 100% { transform: scale(1);    }
-  50%       { transform: scale(1.06); }
+.check-ring {
+  animation: check-ring-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.check-ring {
-  animation:
-    check-ring-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-    check-breathe  2.6s ease-in-out 0.6s infinite;
+/* ── Rosto do pêndulo ────────────────────────────────────────────────────── */
+@keyframes pendulum-breathe {
+  0%, 100% { transform: scale(1);      }
+  50%       { transform: scale(1.016); }
+}
+
+.pendulum-face {
+  transform-origin: center center;
+  animation: pendulum-breathe 3.8s ease-in-out infinite;
 }

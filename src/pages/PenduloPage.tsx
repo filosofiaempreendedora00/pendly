@@ -96,45 +96,88 @@ const getBobColor = (v: number): string => {
 };
 
 // ─── Rostinho SVG ────────────────────────────────────────────────────────────
-const FaceSvg = ({ value }: { value: number }) => {
-  const mouthControlY = lerp(13, 35, value / 100);
+const useBlink = () => {
+  const [isBlinking, setIsBlinking] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const renderEyes = () => {
-    if (value <= 11) {
-      // > < squinting angry eyes (chevrons pointing inward)
-      return (
-        <>
-          <path d="M 10,11 L 16,14 L 10,17" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.88" />
-          <path d="M 30,11 L 24,14 L 30,17" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.88" />
-        </>
-      );
-    }
-    if (value >= 89) {
-      // ^^ happy arc eyes: upward curves
-      return (
-        <>
-          <path d="M 10,16 Q 13,11 16,16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.88" />
-          <path d="M 24,16 Q 27,11 30,16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.88" />
-        </>
-      );
-    }
-    // Default ellipse eyes
-    const eyeRY = value > 78 ? 2 : 3;
-    const eyeY  = value > 78 ? 15 : 14;
-    return (
-      <>
-        <ellipse cx="13" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" />
-        <ellipse cx="27" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" />
-      </>
-    );
-  };
+  useEffect(() => {
+    const scheduleBlink = () => {
+      timerRef.current = setTimeout(() => {
+        setIsBlinking(true);
+        timerRef.current = setTimeout(() => {
+          setIsBlinking(false);
+          scheduleBlink();
+        }, 130);
+      }, 2600 + Math.random() * 4000);
+    };
+    scheduleBlink();
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  return isBlinking;
+};
+
+const FaceSvg = ({ value }: { value: number }) => {
+  const isBlinking = useBlink();
+  const t = Math.max(0, Math.min(1, value / 100));
+
+  // Hard threshold alinhado com os labels: "Muuuito mal" = value ≤ 11, "Muuuito bem" = value ≥ 90
+  const isAngry = value <= 11;
+  const isHappy = value >= 90;
+  const isNormal = !isAngry && !isHappy;
+
+  // Only blink during normal eye state
+  const shouldBlink = isBlinking && isNormal;
+
+  // Continuously interpolated eye parameters
+  const eyeY       = lerp(16.0, 13.5, t);
+  const eyeRyBase  = lerp(2.0,  3.2,  t);
+  const eyeRy      = shouldBlink ? 0.25 : eyeRyBase;
+  const eyeOpacity = lerp(0.68, 0.90, t);
+
+  // Mouth: ctrlY < mouthY → arco pra cima → tristeza (⌢)
+  //        ctrlY = mouthY → reto (neutro)
+  //        ctrlY > mouthY → curva pra baixo → sorriso (⌣, U-shape)
+  // lerp(12, 38, 0.5) = 25 = mouthY → perfeitamente reto no neutro
+  const mouthCtrlY = lerp(12, 38, t);
+  const mouthY     = 25;
 
   return (
-    <svg viewBox="0 0 40 40" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-      {renderEyes()}
+    <svg
+      viewBox="0 0 40 40"
+      width="100%" height="100%"
+      className="pendulum-face"
+      style={{ position: 'absolute', inset: 0 }}
+    >
+      {/* Normal ellipse eyes */}
+      {isNormal && (
+        <g opacity={shouldBlink ? 0 : 1}>
+          <ellipse cx="13" cy={eyeY} rx="2.5" ry={eyeRy} fill="white" opacity={eyeOpacity} />
+          <ellipse cx="27" cy={eyeY} rx="2.5" ry={eyeRy} fill="white" opacity={eyeOpacity} />
+        </g>
+      )}
+
+      {/* Sad/angry chevron eyes — abrupt snap at very low values */}
+      {isAngry && (
+        <>
+          <path d="M 11,11 L 17,14 L 11,17" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.76" />
+          <path d="M 29,11 L 23,14 L 29,17" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.76" />
+        </>
+      )}
+
+      {/* Happy arc eyes — abrupt snap at very high values */}
+      {isHappy && (
+        <>
+          <path d="M 10,16 Q 13,11 16,16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.90" />
+          <path d="M 24,16 Q 27,11 30,16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.90" />
+        </>
+      )}
+
+      {/* Mouth: frown (value=0) → straight (value=50) → smile (value=100) */}
       <path
-        d={`M 10,24 Q 20,${mouthControlY.toFixed(1)} 30,24`}
-        stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.88"
+        d={`M 10,${mouthY} Q 20,${mouthCtrlY.toFixed(1)} 30,${mouthY}`}
+        stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round"
+        opacity={lerp(0.70, 0.90, t)}
       />
     </svg>
   );
@@ -167,7 +210,7 @@ const PenduloPage = () => {
     const last = entries.sort((a, b) =>
       (b.timestamp ?? '').localeCompare(a.timestamp ?? '')
     )[0];
-    if (last) { setPosition(last.position); setSaved(true); }
+    if (last) { setPosition(50); setSaved(true); }
     else       { setPosition(50); setSaved(false); }
     setHasMoved(false);
   }, [todayKey]);
@@ -227,7 +270,7 @@ const PenduloPage = () => {
   const moodLabel = getMoodLabel(position);
 
   return (
-    <div className="flex flex-col h-[100dvh] pb-[88px]">
+    <div className="flex flex-col h-[100dvh] pb-[88px] overflow-hidden">
 
       {/* ── Área superior: data/hora + header + pêndulo + label ── */}
       <div className="flex-1 flex flex-col items-center px-6 pt-5 min-h-0">
@@ -251,7 +294,7 @@ const PenduloPage = () => {
               className="absolute top-4 origin-top"
               style={{
                 transform: `rotate(${angle}deg)`,
-                transition: isDragging ? 'none' : 'transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                transition: isDragging ? 'none' : 'transform 550ms cubic-bezier(0.34, 1.18, 0.64, 1)',
               }}
             >
               <div
