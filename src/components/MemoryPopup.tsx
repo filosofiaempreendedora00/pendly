@@ -374,8 +374,8 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
           <div className="px-6 pb-5">
             <SpectrumBar position={entry.position} />
             <div className="flex justify-between mt-1.5">
-              <span className="text-[9px] text-muted-foreground/30 uppercase tracking-wide">Baixo</span>
-              <span className="text-[9px] text-muted-foreground/30 uppercase tracking-wide">Alto</span>
+              <span className="text-[9px] text-muted-foreground/30 uppercase tracking-wide">Horrível</span>
+              <span className="text-[9px] text-muted-foreground/30 uppercase tracking-wide">Incrível</span>
             </div>
           </div>
 
