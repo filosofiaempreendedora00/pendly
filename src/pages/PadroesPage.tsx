@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry, getBobColor } from '@/lib/pendulum';
-import { TrendingUp, BookHeart } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
+import MemoryPopup from '@/components/MemoryPopup';
 
 const DAYS   = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -121,8 +121,8 @@ const formatTime = (entry: PendulumEntry): string => {
 
 // ─── PadroesPage ─────────────────────────────────────────────────────────────
 const PadroesPage = () => {
-  const navigate    = useNavigate();
-  const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [expandedDay, setExpandedDay]       = useState<string | null>(null);
+  const [selectedEntry, setSelectedEntry]   = useState<PendulumEntry | null>(null);
 
   const weekData = useMemo(() => {
     const entries = getEntries();
@@ -255,10 +255,9 @@ const PadroesPage = () => {
 
                       {/* CTA elegante */}
                       <button
-                        onClick={() => navigate('/biblioteca')}
+                        onClick={() => setSelectedEntry(entry)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/15 text-primary text-[10px] font-medium shrink-0 active:bg-primary/20 transition-colors"
                       >
-                        <BookHeart size={10} />
                         <span>Ver memória</span>
                       </button>
                     </div>
@@ -273,6 +272,14 @@ const PadroesPage = () => {
             <MonthlyHealthChart />
           </div>
         </>
+      )}
+
+      {/* Memory detail popup */}
+      {selectedEntry && (
+        <MemoryPopup
+          entry={selectedEntry}
+          onClose={() => setSelectedEntry(null)}
+        />
       )}
     </div>
   );
