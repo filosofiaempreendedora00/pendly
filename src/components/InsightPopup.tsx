@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Scale, TrendingUp } from 'lucide-react';
+import { X, BookHeart, Scale, TrendingUp } from 'lucide-react';
 import { generateInsight, type InsightInput } from '@/lib/insights';
 
 const PRIMARY = 'hsl(var(--primary))';
@@ -239,7 +239,22 @@ const InsightPopup = ({
           </div>
 
           {/* ── Ações por ícone ───────────────────────────────────────────── */}
-          <div className="flex justify-center gap-10">
+          <div className="flex justify-center gap-8">
+
+            <button
+              onClick={() => { onClose(); navigate('/biblioteca'); }}
+              className="flex flex-col items-center gap-2 group"
+            >
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 group-hover:scale-105 group-active:scale-95"
+                style={{ backgroundColor: 'hsl(var(--primary) / 0.12)' }}
+              >
+                <BookHeart size={20} style={{ color: PRIMARY }} />
+              </div>
+              <span className="text-[11px] font-medium text-muted-foreground/55 group-hover:text-muted-foreground/80 transition-colors">
+                Biblioteca
+              </span>
+            </button>
 
             <button
               onClick={() => { onClose(); navigate('/equilibrio'); }}
@@ -257,7 +272,7 @@ const InsightPopup = ({
             </button>
 
             <button
-              onClick={() => { onClose(); navigate('/biblioteca'); }}
+              onClick={() => { onClose(); navigate('/padroes'); }}
               className="flex flex-col items-center gap-2 group"
             >
               <div

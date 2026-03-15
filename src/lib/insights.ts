@@ -55,6 +55,8 @@ const pl = (emotions: string[], singular: string, plural: string) =>
 const pick = <T>(arr: T[], seed: number): T => arr[Math.abs(seed) % arr.length];
 
 // ─── Geração de insight ───────────────────────────────────────────────────────
+// Tom de voz: conversacional, informal sem ser coloquial.
+// Usar "pra/pro" em vez de "para", "nessa/dessa" em vez de "nesta/desta".
 export const generateInsight = (input: InsightInput): InsightMessage => {
   const { statusLevel, position, emotions, note } = input;
   const mode      = getMode(statusLevel);
@@ -85,9 +87,9 @@ export const generateInsight = (input: InsightInput): InsightMessage => {
     } else {
       const opts = intensity >= 3
         ? [
-            `Parece que ${em} ${pl(emotions, 'chegou', 'chegaram')} forte neste momento.`,
+            `Parece que ${em} ${pl(emotions, 'chegou', 'chegaram')} forte nesse momento.`,
             `${cap(em1)} e esse peso — faz sentido que seja difícil agora.`,
-            `Parece que ${em} ${pl(emotions, 'está pesando', 'estão pesando')} bastante neste momento.`,
+            `Parece que ${em} ${pl(emotions, 'está pesando', 'estão pesando')} bastante nesse momento.`,
           ]
         : [
             `Parece que ${em} ${pl(emotions, 'apareceu', 'apareceram')} por aqui hoje.`,
@@ -100,18 +102,18 @@ export const generateInsight = (input: InsightInput): InsightMessage => {
     const line2Opts = {
       morning: [
         'O dia ainda está começando — esse momento não precisa definir as horas que vêm.',
-        'O que precisaria mudar só um pouco para a manhã seguir de um jeito diferente?',
+        'O que precisaria mudar só um pouco pra manhã seguir de um jeito diferente?',
         'Será que esse sentimento consegue mesmo definir o resto do seu dia?',
       ],
       afternoon: [
-        'Há algo pequeno que ainda está no seu controle agora?',
+        'Tem algo pequeno que ainda está no seu controle agora?',
         'Às vezes uma pausa de dois minutos já muda a perspectiva do resto da tarde.',
-        'O que você pode fazer agora, por menor que seja, para se reencontrar um pouco?',
+        'O que você pode fazer agora, por menor que seja, pra se reencontrar um pouco?',
       ],
       night: [
-        'Um dia difícil não define quem você é — o que esse momento revela sobre o que importa para você?',
+        'Um dia difícil não define quem você é — o que esse momento revela sobre o que importa pra você?',
         'O que você aprendeu sobre si mesmo com o que aconteceu hoje?',
-        'Você chegou até aqui. O que foi necessário para isso?',
+        'Você chegou até aqui. O que foi necessário pra isso?',
       ],
     };
 
@@ -127,23 +129,23 @@ export const generateInsight = (input: InsightInput): InsightMessage => {
           'Estar no meio pode ser um espaço de clareza — ou de dúvida ainda não resolvida.',
         ]
       : [
-          `Parece que hoje está mais neutro para você.`,
+          `Parece que hoje está mais neutro pra você.`,
           `Um dia no meio-termo — nem muito pesado, nem muito leve.`,
           `Esse "mais ou menos" às vezes pede um olhar mais atento.`,
         ];
 
     const line2Opts = {
       morning: [
-        'Houve algo pequeno esta manhã que poderia tornar o dia um pouco mais seu?',
-        'O que você mais precisa hoje para sair desse neutro?',
+        'Houve algo pequeno essa manhã que poderia tornar o dia um pouco mais seu?',
+        'O que você mais precisa hoje pra sair desse neutro?',
       ],
       afternoon: [
-        'Houve algo pequeno que poderia tornar esta tarde um pouco melhor?',
-        'O que faria a segunda metade deste dia ser um pouco mais satisfatória?',
+        'Houve algo pequeno que poderia tornar essa tarde um pouco melhor?',
+        'O que faria a segunda metade desse dia ser um pouco mais satisfatória?',
       ],
       night: [
-        'Olhando para o dia, houve algum momento que foi melhor do que os outros?',
-        'O que tornaria amanhã um pouco diferente deste dia?',
+        'Olhando pro dia, houve algum momento que foi melhor do que os outros?',
+        'O que tornaria amanhã um pouco diferente desse dia?',
       ],
     };
 
@@ -182,15 +184,15 @@ export const generateInsight = (input: InsightInput): InsightMessage => {
   const line2Opts = {
     morning: [
       'Você consegue identificar o que ajudou a trazer esse sentimento tão cedo?',
-      'O que dessa manhã você quer levar para o resto do dia?',
+      'O que dessa manhã você quer levar pro resto do dia?',
     ],
     afternoon: [
-      'Você consegue identificar o que contribuiu para isso nesta tarde?',
-      'Há algo nesse dia que você quer repetir ou guardar?',
+      'Você consegue identificar o que contribuiu pra isso nessa tarde?',
+      'Tem algo nesse dia que você quer repetir ou guardar?',
     ],
     night: [
-      'O que aconteceu hoje que contribuiu para esse sentimento?',
-      'Que parte deste dia você quer lembrar amanhã?',
+      'O que aconteceu hoje que contribuiu pra esse sentimento?',
+      'Que parte desse dia você quer lembrar amanhã?',
     ],
   };
 
