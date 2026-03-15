@@ -195,7 +195,7 @@ const PadroesPage = () => {
   const expandedDayData = weekData.find(d => d.date === expandedDay) ?? null;
 
   return (
-    <div className="flex flex-col min-h-screen pb-24 px-6 pt-16">
+    <div className="flex flex-col min-h-screen pb-24 px-6 pt-16 bg-muted/30">
       <h1 className="text-2xl font-semibold text-foreground mb-1 tracking-tight">
         Evolução
       </h1>

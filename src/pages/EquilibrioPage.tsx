@@ -103,7 +103,7 @@ const EquilibrioPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-muted/30">
       <div className="flex-1 px-6 pt-14 pb-36 overflow-y-auto">
 
         {/* Progress bar — one segment per intervention */}

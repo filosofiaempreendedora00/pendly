@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { addEntry, getEntries, getTodayKey, getStatusLevel } from '@/lib/pendulum';
+import { useNavigate } from 'react-router-dom';
+import { addEntry, getEntries, getTodayKey, getStatusLevel, getTodayEntryCount, DAILY_FREE_LIMIT } from '@/lib/pendulum';
 import type { StatusLevel } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
 import EmotionModal from '@/components/EmotionModal';
 import InsightPopup from '@/components/InsightPopup';
+import PaywallPopup from '@/components/PaywallPopup';
 
 // ─── Data / hora ao vivo ─────────────────────────────────────────────────────
 const DIAS   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -185,6 +187,7 @@ const FaceSvg = ({ value }: { value: number }) => {
 
 // ─── PenduloPage ─────────────────────────────────────────────────────────────
 const PenduloPage = () => {
+  const navigate = useNavigate();
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDraggingTrack, setIsDraggingTrack] = useState(false);
   const [isDraggingBob,   setIsDraggingBob]   = useState(false);
@@ -194,6 +197,7 @@ const PenduloPage = () => {
   const [saved,             setSaved]             = useState(false);
   const [hasMoved,          setHasMoved]          = useState(false);
   const [showEmotionModal,  setShowEmotionModal]  = useState(false);
+  const [showPaywall,       setShowPaywall]       = useState(false);
 
   // ── Insight popup ────────────────────────────────────────────────────────
   const [showInsight,  setShowInsight]  = useState(false);
@@ -246,6 +250,10 @@ const PenduloPage = () => {
 
   // Opens the emotion modal — actual save happens in handleEmotionConfirm
   const handleSave = () => {
+    if (getTodayEntryCount() >= DAILY_FREE_LIMIT) {
+      setShowPaywall(true);
+      return;
+    }
     setShowEmotionModal(true);
   };
 
@@ -380,7 +388,7 @@ const PenduloPage = () => {
       <div className="flex justify-center items-center px-6 py-4 h-20 shrink-0">
         {saved ? (
           <span className="text-[11px] text-muted-foreground/40">
-            Mova o pêndulo novamente para atualizar
+            Mova o pêndulo pra fazer um novo registro
           </span>
         ) : (
           <Button
@@ -414,6 +422,14 @@ const PenduloPage = () => {
           emotions={insightData.emotions}
           note={insightData.note}
           bobColor={insightData.bobColor}
+        />
+      )}
+
+      {/* ── Paywall: limite diário ── */}
+      {showPaywall && (
+        <PaywallPopup
+          onClose={() => setShowPaywall(false)}
+          onManageToday={() => { setShowPaywall(false); navigate('/biblioteca'); }}
         />
       )}
 

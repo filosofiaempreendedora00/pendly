@@ -159,6 +159,12 @@ export function getEntriesForDate(date: string): PendulumEntry[] {
   return getEntries().filter(e => e.date === date);
 }
 
+export const DAILY_FREE_LIMIT = 3;
+
+export function getTodayEntryCount(): number {
+  return getEntries().filter(e => e.date === getTodayKey()).length;
+}
+
 export function getAveragePosition(entries: PendulumEntry[]): number {
   if (entries.length === 0) return 50;
   return Math.round(entries.reduce((sum, e) => sum + e.position, 0) / entries.length);

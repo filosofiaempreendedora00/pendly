@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, BookHeart, Scale, TrendingUp } from 'lucide-react';
+import { X, BookHeart, TrendingUp } from 'lucide-react';
 import { generateInsight, type InsightInput } from '@/lib/insights';
 
 const PRIMARY = 'hsl(var(--primary))';
@@ -232,10 +232,12 @@ const InsightPopup = ({
               {line1}
             </p>
 
-            {/* Pergunta reflexiva — mensagem principal, maior e mais forte */}
-            <p className="text-[16px] font-semibold text-foreground leading-snug px-2">
-              {line2}
-            </p>
+            {/* Pergunta reflexiva — mensagem principal, caixa azul */}
+            <div className="mx-1 rounded-2xl bg-primary/10 border border-primary/20 px-4 py-3.5">
+              <p className="text-[15px] font-semibold text-primary leading-snug">
+                {line2}
+              </p>
+            </div>
           </div>
 
           {/* ── Ações por ícone ───────────────────────────────────────────── */}
@@ -253,21 +255,6 @@ const InsightPopup = ({
               </div>
               <span className="text-[11px] font-medium text-muted-foreground/55 group-hover:text-muted-foreground/80 transition-colors">
                 Biblioteca
-              </span>
-            </button>
-
-            <button
-              onClick={() => { onClose(); navigate('/equilibrio'); }}
-              className="flex flex-col items-center gap-2 group"
-            >
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 group-hover:scale-105 group-active:scale-95"
-                style={{ backgroundColor: 'hsl(var(--primary) / 0.12)' }}
-              >
-                <Scale size={20} style={{ color: PRIMARY }} />
-              </div>
-              <span className="text-[11px] font-medium text-muted-foreground/55 group-hover:text-muted-foreground/80 transition-colors">
-                Equilibrar
               </span>
             </button>
 

@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   getEntries, deleteEntry, updateEntry,
   PendulumEntry, getTodayKey, getLocalDateKey, PERIOD_CONFIG, DayPeriod,
 } from '@/lib/pendulum';
-import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus } from 'lucide-react';
+import PaywallPopup from '@/components/PaywallPopup';
+import { getTodayEntryCount, DAILY_FREE_LIMIT } from '@/lib/pendulum';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
 const MOODS = [
@@ -456,23 +459,33 @@ const EntryInline = ({
 
 // ─── DayCard ──────────────────────────────────────────────────────────────────
 const DayCard = ({
-  date, entries, onRequestDelete, onEdited,
+  date, entries, onRequestDelete, onEdited, onAddNew,
 }: {
   date: string;
   entries: PendulumEntry[];
   onRequestDelete: (entry: PendulumEntry) => void;
   onEdited: () => void;
+  onAddNew?: () => void;
 }) => {
   const { main, sub } = formatDateHeader(date);
   const bobHalf = 22; // w-11/2
+  const isToday = date === getTodayKey();
 
   return (
-    <div className="mx-4 mb-4 rounded-2xl bg-background shadow-sm overflow-hidden border border-border/30">
+    <div className="mx-4 mb-4 rounded-2xl bg-background shadow-sm border border-border/30 relative">
       {/* Cabeçalho */}
-      <div className="px-4 pt-3 pb-2 flex items-baseline gap-2">
+      <div className="px-4 pt-3 pb-2 flex items-center gap-2">
         <span className="text-[13px] font-bold text-foreground">{main}</span>
         <span className="text-[11px] text-muted-foreground/50 font-medium">{sub}</span>
       </div>
+      {isToday && onAddNew && (
+        <button
+          onClick={onAddNew}
+          className="absolute -top-4 right-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-md shadow-primary/40"
+        >
+          <Plus size={16} strokeWidth={2.6} className="text-white" />
+        </button>
+      )}
       <div className="mx-4 border-t border-border/30" />
 
       {/* Registros */}
@@ -508,8 +521,18 @@ const DayCard = ({
 
 // ─── BibliotecaPage ───────────────────────────────────────────────────────────
 const BibliotecaPage = () => {
+  const navigate = useNavigate();
   const [groups, setGroups]           = useState<{ date: string; entries: PendulumEntry[] }[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<PendulumEntry | null>(null);
+  const [showPaywall, setShowPaywall]   = useState(false);
+
+  const handleAddNew = () => {
+    if (getTodayEntryCount() >= DAILY_FREE_LIMIT) {
+      setShowPaywall(true);
+    } else {
+      navigate('/');
+    }
+  };
 
   const reload = useCallback(() => {
     const all = getEntries().sort((a, b) => {
@@ -560,6 +583,7 @@ const BibliotecaPage = () => {
             entries={dayEntries}
             onRequestDelete={setDeleteTarget}
             onEdited={reload}
+            onAddNew={handleAddNew}
           />
         ))}
       </div>
@@ -569,6 +593,14 @@ const BibliotecaPage = () => {
         <DeletePopup
           onCancel={() => setDeleteTarget(null)}
           onConfirm={handleConfirmDelete}
+        />
+      )}
+
+      {/* Paywall: limite diário */}
+      {showPaywall && (
+        <PaywallPopup
+          onClose={() => setShowPaywall(false)}
+          onManageToday={() => setShowPaywall(false)}
         />
       )}
     </>

@@ -49,7 +49,7 @@ const PenduloV1 = ({ onBack }: { onBack: () => void }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-24 bg-muted/30">
       {/* Back button */}
       <div className="px-6 pt-10 pb-2">
         <button
@@ -166,7 +166,7 @@ const CabidePage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-24 overflow-hidden">
+    <div className="flex flex-col min-h-screen pb-24 bg-muted/30 overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-14 pb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-1">
