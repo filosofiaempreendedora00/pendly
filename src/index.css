@@ -67,6 +67,8 @@
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Reserva o espaço do scrollbar mesmo quando ausente, evita layout shift */
+    scrollbar-gutter: stable;
   }
 }
 
