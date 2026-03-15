@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  getEntries, deleteEntry, updateEntryNote,
+  getEntries, deleteEntry, updateEntry,
   PendulumEntry, getTodayKey, getLocalDateKey, PERIOD_CONFIG, DayPeriod,
 } from '@/lib/pendulum';
-import { ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square } from 'lucide-react';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
 const MOODS = [
@@ -165,6 +165,8 @@ const DeletePopup = ({
 );
 
 // ─── EntryInline ──────────────────────────────────────────────────────────────
+const formatDur = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
 const EntryInline = ({
   entry, color, label, time, hasDetails, isFirst, onRequestDelete, onEdited,
 }: {
@@ -177,13 +179,22 @@ const EntryInline = ({
   onRequestDelete: (entry: PendulumEntry) => void;
   onEdited: () => void;
 }) => {
-  const [expanded, setExpanded]   = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [editMode, setEditMode]   = useState(false);
-  const [noteValue, setNoteValue] = useState(entry.note ?? '');
+  const [expanded, setExpanded]       = useState(false);
+  const [menuOpen, setMenuOpen]       = useState(false);
+  const [editMode, setEditMode]       = useState(false);
+  const [noteValue, setNoteValue]     = useState(entry.note ?? '');
+  const [photoValue, setPhotoValue]   = useState<string | undefined>(entry.photo);
+  const [audioValue, setAudioValue]   = useState<string | undefined>(entry.audio);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recDuration, setRecDuration] = useState(0);
+
+  const photoInputRef    = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef        = useRef<Blob[]>([]);
+  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleSave = () => {
-    if (entry.timestamp) updateEntryNote(entry.timestamp, noteValue);
+    if (entry.timestamp) updateEntry(entry.timestamp, { note: noteValue, photo: photoValue, audio: audioValue });
     setEditMode(false);
     setMenuOpen(false);
     onEdited();
@@ -191,14 +202,57 @@ const EntryInline = ({
 
   const handleCancelEdit = () => {
     setNoteValue(entry.note ?? '');
+    setPhotoValue(entry.photo);
+    setAudioValue(entry.audio);
     setEditMode(false);
     setMenuOpen(false);
+    if (isRecording) stopRecording();
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoValue(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => setAudioValue(reader.result as string);
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+      recorder.start();
+      setIsRecording(true);
+      setRecDuration(0);
+      timerRef.current = setInterval(() => setRecDuration(d => d + 1), 1000);
+    } catch { /* mic unavailable */ }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (timerRef.current) clearInterval(timerRef.current);
   };
 
   return (
     <div className={isFirst ? '' : 'mt-6'}>
-      {/* Linha principal */}
-      <div className="flex items-center gap-3 relative">
+      {/* Linha principal — toque expande detalhes */}
+      <div
+        className="flex items-center gap-3 relative"
+        onClick={() => { if (hasDetails && !editMode) setExpanded(v => !v); }}
+        style={{ cursor: hasDetails && !editMode ? 'pointer' : 'default' }}
+      >
         {/* Bob */}
         <div
           className="relative w-11 h-11 rounded-full shrink-0 z-10"
@@ -207,7 +261,7 @@ const EntryInline = ({
           <FaceSvg value={entry.position} />
         </div>
 
-        {/* Label + horário + emoções */}
+        {/* Label + horário + emoções + indicadores */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-0">
             <span className="text-[15px] font-semibold" style={{ color }}>{label}</span>
@@ -215,39 +269,44 @@ const EntryInline = ({
               <span className="ml-2 text-xs text-muted-foreground/40 font-medium">{time}</span>
             )}
           </div>
-          {entry.emotions && entry.emotions.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {entry.emotions.map(emotion => (
+          {(entry.emotions?.length || entry.note || entry.photo || entry.audio) && (
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+              {entry.emotions?.map(emotion => (
                 <span
                   key={emotion}
-                  className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none bg-muted text-muted-foreground/60 border border-border/50"
+                  className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none bg-primary/15 text-primary border border-primary/20"
                 >
                   {emotion}
                 </span>
               ))}
+              {entry.note && (
+                <span className="w-[18px] h-[18px] rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText size={9} className="text-primary/70" />
+                </span>
+              )}
+              {entry.photo && (
+                <span className="w-[18px] h-[18px] rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <ImageIcon size={9} className="text-primary/70" />
+                </span>
+              )}
+              {entry.audio && (
+                <span className="w-[18px] h-[18px] rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Mic size={9} className="text-primary/70" />
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        {/* Ações */}
-        <div className="flex items-center gap-0 shrink-0">
-          {hasDetails && !editMode && (
-            <button
-              onClick={() => setExpanded(v => !v)}
-              className="text-muted-foreground/35 hover:text-muted-foreground transition-colors p-1"
-            >
-              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-            </button>
-          )}
-          <button
-            onClick={() => { setMenuOpen(v => !v); setExpanded(false); }}
-            className={`p-1.5 rounded-lg transition-colors ${
-              menuOpen ? 'text-foreground bg-muted' : 'text-muted-foreground/35 hover:text-muted-foreground'
-            }`}
-          >
-            <MoreHorizontal size={15} />
-          </button>
-        </div>
+        {/* Único ícone de ações */}
+        <button
+          onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); setExpanded(false); }}
+          className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+            menuOpen ? 'text-foreground bg-muted' : 'text-muted-foreground/30 hover:text-muted-foreground'
+          }`}
+        >
+          <MoreHorizontal size={15} />
+        </button>
       </div>
 
       {/* Menu de ações */}
@@ -255,10 +314,10 @@ const EntryInline = ({
         <div className="mt-2.5 ml-[3.5rem] flex gap-2 entry-menu-in">
           <button
             onClick={() => { setEditMode(true); setExpanded(false); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted text-xs font-medium text-foreground/70 active:bg-muted/70 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-xs font-medium text-primary active:bg-primary/20 transition-colors"
           >
             <Pencil size={12} />
-            Editar nota
+            Editar registro
           </button>
           <button
             onClick={() => { onRequestDelete(entry); setMenuOpen(false); }}
@@ -287,16 +346,95 @@ const EntryInline = ({
 
       {/* Modo edição */}
       {editMode && (
-        <div className="mt-2 ml-[3.5rem] entry-menu-in">
+        <div className="mt-3 ml-[3.5rem] entry-menu-in flex flex-col gap-3">
+
+          {/* Nota */}
           <textarea
             value={noteValue}
             onChange={e => setNoteValue(e.target.value)}
-            className="w-full rounded-xl bg-muted/50 border border-border/50 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 min-h-[80px] leading-relaxed"
+            className="w-full rounded-xl bg-muted/50 border border-border/50 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 min-h-[72px] leading-relaxed"
             style={{ fontSize: '16px' }}
-            placeholder="Escreva uma nota..."
-            autoFocus
+            placeholder="Nota de texto..."
           />
-          <div className="flex gap-2 mt-2">
+
+          {/* Foto */}
+          <div className="flex flex-col gap-1.5">
+            {photoValue ? (
+              <div className="relative">
+                <img src={photoValue} alt="" className="rounded-xl max-h-40 w-full object-cover" />
+                <div className="absolute top-2 right-2 flex gap-1.5">
+                  <button
+                    onClick={() => photoInputRef.current?.click()}
+                    className="h-7 px-2.5 rounded-lg bg-black/50 text-white text-[11px] font-medium flex items-center gap-1"
+                  >
+                    <Camera size={11} /> Trocar
+                  </button>
+                  <button
+                    onClick={() => setPhotoValue(undefined)}
+                    className="w-7 h-7 rounded-lg bg-black/50 text-white flex items-center justify-center"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-border/60 text-xs text-muted-foreground/60 hover:border-primary/40 hover:text-primary transition-colors"
+              >
+                <Camera size={13} /> Adicionar foto
+              </button>
+            )}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+          </div>
+
+          {/* Áudio */}
+          <div className="flex flex-col gap-1.5">
+            {isRecording ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-xs text-red-500 font-medium flex-1">{formatDur(recDuration)}</span>
+                <button
+                  onClick={stopRecording}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500 text-white text-[11px] font-medium"
+                >
+                  <Square size={10} fill="white" /> Parar
+                </button>
+              </div>
+            ) : audioValue ? (
+              <div className="flex items-center gap-2">
+                <audio src={audioValue} controls className="flex-1 h-8 min-w-0" />
+                <button
+                  onClick={startRecording}
+                  className="h-8 px-2.5 rounded-lg border border-border text-[11px] text-muted-foreground font-medium flex items-center gap-1 shrink-0"
+                >
+                  <Mic size={11} /> Regravar
+                </button>
+                <button
+                  onClick={() => setAudioValue(undefined)}
+                  className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground shrink-0"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={startRecording}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-border/60 text-xs text-muted-foreground/60 hover:border-primary/40 hover:text-primary transition-colors"
+              >
+                <Mic size={13} /> Adicionar áudio
+              </button>
+            )}
+          </div>
+
+          {/* Salvar / Cancelar */}
+          <div className="flex gap-2">
             <button
               onClick={handleCancelEdit}
               className="flex-1 h-9 rounded-xl border border-border text-xs font-medium text-muted-foreground active:bg-muted transition-colors"

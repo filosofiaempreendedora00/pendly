@@ -137,6 +137,16 @@ export function updateEntryNote(timestamp: string, note: string) {
   localStorage.setItem('pendly-entries', JSON.stringify(entries));
 }
 
+export function updateEntry(
+  timestamp: string,
+  updates: Partial<Pick<PendulumEntry, 'note' | 'photo' | 'audio'>>,
+) {
+  const entries = getEntries().map(e =>
+    e.timestamp === timestamp ? { ...e, ...updates } : e
+  );
+  localStorage.setItem('pendly-entries', JSON.stringify(entries));
+}
+
 export function getEntries(): PendulumEntry[] {
   try {
     return JSON.parse(localStorage.getItem('pendly-entries') || '[]');
