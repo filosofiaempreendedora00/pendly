@@ -62,16 +62,18 @@ const getMoodLabel = (v: number) =>
 
 // ─── Cor do pêndulo ──────────────────────────────────────────────────────────
 const COLOR_STOPS = [
-  { pos: 0,   h: 0,   s: 72, l: 52 },
-  { pos: 22,  h: 8,   s: 74, l: 54 },
-  { pos: 33,  h: 16,  s: 75, l: 54 },
-  { pos: 44,  h: 26,  s: 80, l: 56 },
-  { pos: 50,  h: 215, s: 50, l: 58 },
-  { pos: 56,  h: 215, s: 50, l: 58 },
-  { pos: 67,  h: 152, s: 44, l: 50 },
-  { pos: 78,  h: 148, s: 52, l: 44 },
-  { pos: 89,  h: 145, s: 60, l: 40 },
-  { pos: 100, h: 143, s: 68, l: 33 },
+  { pos: 0,   h: 0,   s: 72, l: 52 },  // vermelho
+  { pos: 11,  h: 8,   s: 73, l: 54 },  // laranja-vermelho
+  { pos: 22,  h: 16,  s: 75, l: 54 },  // laranja
+  { pos: 33,  h: 28,  s: 72, l: 56 },  // âmbar
+  { pos: 44,  h: 46,  s: 80, l: 58 },  // amarelo
+  { pos: 48,  h: 35,  s: 25, l: 62 },  // neutro-quente
+  { pos: 50,  h: 215, s: 50, l: 58 },  // azul (centro)
+  { pos: 56,  h: 215, s: 50, l: 58 },  // azul (estendido)
+  { pos: 67,  h: 152, s: 44, l: 50 },  // verde
+  { pos: 78,  h: 148, s: 52, l: 44 },  // verde escuro
+  { pos: 89,  h: 145, s: 60, l: 40 },  // verde mais escuro
+  { pos: 100, h: 143, s: 68, l: 33 },  // verde escurissimo
 ];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -280,9 +282,16 @@ const PenduloPage = () => {
             style={{
               background: `linear-gradient(to right,
                 hsl(0,72%,52%) 0%,
-                hsl(16,75%,54%) 25%,
+                hsl(8,73%,54%) 11%,
+                hsl(16,75%,54%) 22%,
+                hsl(28,72%,56%) 33%,
+                hsl(46,80%,58%) 44%,
+                hsl(35,25%,62%) 48%,
                 hsl(215,50%,58%) 50%,
-                hsl(148,52%,44%) 75%,
+                hsl(215,50%,58%) 56%,
+                hsl(152,44%,50%) 67%,
+                hsl(148,52%,44%) 78%,
+                hsl(145,60%,40%) 89%,
                 hsl(143,68%,33%) 100%)`,
             }}
           >
