@@ -293,16 +293,17 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    // pb-24 garante que o card fique acima do BottomNav fixo (≈88px)
-    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-24 sm:items-center sm:pb-0">
+    // z-[60] > z-50 do BottomNav, garante que o popup fique acima do menu
+    // items-center centraliza o card longe do nav (mesma abordagem do PaywallPopup)
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
 
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
       <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
-        {/* max-h usa dvh para respeitar o chrome do browser mobile */}
-        <div className="max-h-[72dvh] sm:max-h-[82dvh] overflow-y-auto overscroll-contain">
+        {/* dvh desconta o chrome do browser mobile; deixa margem suficiente pro nav */}
+        <div className="max-h-[78dvh] overflow-y-auto overscroll-contain">
 
           {/* ── Top bar: delete left, close right ─────────────────────────── */}
           <div className="flex items-center justify-between px-5 pt-4 pb-1">
