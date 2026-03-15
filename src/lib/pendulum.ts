@@ -130,6 +130,15 @@ export function deleteEntry(timestamp: string) {
   localStorage.setItem('pendly-entries', JSON.stringify(entries));
 }
 
+// Apaga pelo timestamp quando disponível, senão por date+period (entradas legadas)
+export function deleteEntryFlex(entry: PendulumEntry) {
+  const all = getEntries();
+  const remaining = entry.timestamp
+    ? all.filter(e => e.timestamp !== entry.timestamp)
+    : all.filter(e => !(e.date === entry.date && e.period === entry.period));
+  localStorage.setItem('pendly-entries', JSON.stringify(remaining));
+}
+
 export function updateEntryNote(timestamp: string, note: string) {
   const entries = getEntries().map(e =>
     e.timestamp === timestamp ? { ...e, note } : e

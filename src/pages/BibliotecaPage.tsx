@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  getEntries, deleteEntry, updateEntry,
+  getEntries, deleteEntryFlex, updateEntry,
   PendulumEntry, getTodayKey, getLocalDateKey, PERIOD_CONFIG, DayPeriod,
 } from '@/lib/pendulum';
 import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus } from 'lucide-react';
@@ -552,8 +552,8 @@ const BibliotecaPage = () => {
   useEffect(() => { reload(); }, [reload]);
 
   const handleConfirmDelete = () => {
-    if (!deleteTarget?.timestamp) return;
-    deleteEntry(deleteTarget.timestamp);
+    if (!deleteTarget) return;
+    deleteEntryFlex(deleteTarget);
     setDeleteTarget(null);
     reload();
   };
