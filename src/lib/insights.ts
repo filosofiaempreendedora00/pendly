@@ -47,6 +47,10 @@ const formatEmotions = (emotions: string[]): string => {
   return `${emotions[0]}, ${emotions[1]} e ${emotions[2]}`;
 };
 
+// Concordância verbal baseada no número de emoções
+const pl = (emotions: string[], singular: string, plural: string) =>
+  emotions.length === 1 ? singular : plural;
+
 // Seleção pseudo-aleatória mas estável dentro da sessão
 const pick = <T>(arr: T[], seed: number): T => arr[Math.abs(seed) % arr.length];
 
@@ -81,14 +85,14 @@ export const generateInsight = (input: InsightInput): InsightMessage => {
     } else {
       const opts = intensity >= 3
         ? [
-            `Parece que ${em} chegaram forte neste momento.`,
+            `Parece que ${em} ${pl(emotions, 'chegou', 'chegaram')} forte neste momento.`,
             `${cap(em1)} e esse peso — faz sentido que seja difícil agora.`,
-            `Parece que ${em} estão pesando bastante neste momento.`,
+            `Parece que ${em} ${pl(emotions, 'está pesando', 'estão pesando')} bastante neste momento.`,
           ]
         : [
-            `Parece que ${em} apareceu por aí hoje.`,
+            `Parece que ${em} ${pl(emotions, 'apareceu', 'apareceram')} por aqui hoje.`,
             `${cap(em1)} pode incomodar, mesmo que pareça algo pequeno.`,
-            `Parece que ${em} esteve presente agora.`,
+            `Parece que ${em} ${pl(emotions, 'está presente', 'estão presentes')} agora.`,
           ];
       line1 = pick(opts, seed);
     }
