@@ -5,27 +5,58 @@ interface PaywallPopupProps {
   onManageToday: () => void;
 }
 
-// Bob triste — valor ~18 (Autopiedade), cor laranja-avermelhada
-const SadBob = () => (
-  <div
-    className="relative w-16 h-16 rounded-full flex items-center justify-center"
-    style={{
-      backgroundColor: 'hsl(8, 74%, 54%)',
-      boxShadow: '0 4px 16px hsl(8, 74%, 54%, 0.35)',
-    }}
-  >
-    <svg viewBox="0 0 40 40" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-      {/* Olhos normais levemente caídos */}
-      <ellipse cx="13" cy="15" rx="2.5" ry="2.8" fill="white" opacity="0.82" />
-      <ellipse cx="27" cy="15" rx="2.5" ry="2.8" fill="white" opacity="0.82" />
-      {/* Boca triste — ctrlY (10) < endY (25) → arco pra cima = ⌢ = FROWN */}
-      <path
-        d="M 10,25 Q 20,14 30,25"
-        stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.82"
-      />
-    </svg>
-  </div>
-);
+// GrimaceBob — inspirado em 😬 "ops..."
+// Cor âmbar neutra (distinta dos tons de humor), sobrancelhas arqueadas de
+// tensão, olhos levemente apertados e boca larga mostrando dentes (linha de
+// gengiva + 4 divisores = 5 dentes visíveis).
+const GrimaceBob = () => {
+  const face = 'hsl(38, 68%, 54%)'; // âmbar quente — nem vermelho-doom nem verde-feliz
+  return (
+    <div
+      className="relative w-16 h-16 rounded-full"
+      style={{ backgroundColor: face, boxShadow: `0 4px 18px hsl(38 68% 54% / 0.40)` }}
+    >
+      <svg viewBox="0 0 40 40" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+
+        {/* Sobrancelhas: arqueadas pra cima — expressão de tensão / "ops" */}
+        <path d="M 8.5,11 Q 13,8.5 17,10.5"  stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.72" />
+        <path d="M 23,10.5 Q 27,8.5 31.5,11" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.72" />
+
+        {/* Olhos: ligeiramente achatados (tensão, não felicidade) */}
+        <ellipse cx="13" cy="16" rx="2.8" ry="2.1" fill="white" opacity="0.88" />
+        <ellipse cx="27" cy="16" rx="2.8" ry="2.1" fill="white" opacity="0.88" />
+
+        {/* ── Boca grimace ─────────────────────────────────────────────────── */}
+        {/* Área de dentes: preenchimento branco entre lábio sup e inf */}
+        <path
+          d="M 7,25.5 C 13,22.5 27,22.5 33,25.5 C 27,31.5 13,31.5 7,25.5 Z"
+          fill="white" opacity="0.92"
+        />
+        {/* Linha da gengiva: divide dentes superiores e inferiores */}
+        <path
+          d="M 7,25.5 C 13,26.2 27,26.2 33,25.5"
+          stroke={face} strokeWidth="1.0" fill="none" opacity="0.65"
+        />
+        {/* Lábio superior — borda sutil */}
+        <path
+          d="M 7,25.5 C 13,22.5 27,22.5 33,25.5"
+          stroke="white" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.50"
+        />
+        {/* Lábio inferior — borda sutil */}
+        <path
+          d="M 7,25.5 C 13,31.5 27,31.5 33,25.5"
+          stroke="white" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.50"
+        />
+        {/* Divisores dos dentes (4 linhas = 5 dentes) */}
+        <line x1="13.0" y1="23.2" x2="11.8" y2="30.5" stroke={face} strokeWidth="0.9" opacity="0.55" />
+        <line x1="18.0" y1="22.6" x2="16.8" y2="31.2" stroke={face} strokeWidth="0.9" opacity="0.55" />
+        <line x1="22.5" y1="22.5" x2="21.5" y2="31.5" stroke={face} strokeWidth="0.9" opacity="0.55" />
+        <line x1="27.5" y1="22.6" x2="26.5" y2="30.8" stroke={face} strokeWidth="0.9" opacity="0.55" />
+
+      </svg>
+    </div>
+  );
+};
 
 const PaywallPopup = ({ onClose, onManageToday }: PaywallPopupProps) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
@@ -38,9 +69,9 @@ const PaywallPopup = ({ onClose, onManageToday }: PaywallPopupProps) => (
     {/* Card */}
     <div className="relative w-full max-w-xs bg-background rounded-3xl p-6 popup-slide-in shadow-2xl">
 
-      {/* Bob triste */}
+      {/* Bob "ops..." — grimace 😬 */}
       <div className="flex justify-center mb-4">
-        <SadBob />
+        <GrimaceBob />
       </div>
 
       <h3 className="text-[17px] font-semibold text-foreground text-center mb-2">
