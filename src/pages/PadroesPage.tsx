@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEntries, getAveragePosition, getLocalDateKey, getTodayKey, getTodayEntryCount, DAILY_FREE_LIMIT, PendulumEntry, getBobColor, updateEntry, deleteEntryFlex } from '@/lib/pendulum';
-import { TrendingUp, Plus } from 'lucide-react';
+import { TrendingUp, Plus, ChevronDown } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
 import MemoryPopup from '@/components/MemoryPopup';
 import PaywallPopup from '@/components/PaywallPopup';
@@ -113,6 +113,42 @@ const StackedFaces = ({ entries }: { entries: PendulumEntry[] }) => {
   );
 };
 
+// ─── PendulumSwingIcon — ícone animado de pêndulo para a cadência ─────────────
+// Bolinha sólida e proporcionalmente maior que o ícone do menu inferior.
+// O braço oscila em torno do pivô (topo) via CSS transform-box + transform-origin.
+const PendulumSwingIcon = ({ size = 36, active = true }: { size?: number; active?: boolean }) => (
+  <>
+    <style>{`
+      @keyframes pendulum-swing {
+        0%, 100% { transform: rotate(-22deg); }
+        50%       { transform: rotate(22deg);  }
+      }
+      .cadencia-arm {
+        transform-box:    fill-box;
+        transform-origin: 50% 0%;
+        animation: pendulum-swing 1.6s ease-in-out infinite;
+      }
+    `}</style>
+    <svg width={size} height={size} viewBox="0 0 24 38" fill="none">
+      {/* Barra horizontal do pivô */}
+      <line x1="5" y1="3" x2="19" y2="3"
+        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Braço + bolinha — animados quando active */}
+      <g className={active ? 'cadencia-arm' : ''}>
+        <line x1="12" y1="3" x2="12" y2="23"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="12" cy="29" r="6" fill="currentColor" />
+      </g>
+    </svg>
+  </>
+);
+
+// ─── Cadência helpers ─────────────────────────────────────────────────────────
+const getCadenciaMessage = (streak: number): string => {
+  if (streak === 0) return 'Registre hoje para começar sua cadência.';
+  return 'reconhecendo melhor minhas próprias emoções e voltando pro eixo.';
+};
+
 // ─── Horário ──────────────────────────────────────────────────────────────────
 const formatTime = (entry: PendulumEntry): string => {
   if (!entry.timestamp) return '';
@@ -155,6 +191,42 @@ const PadroesPage = () => {
     }
   }, [selectedEntry, refresh]);
 
+  // ── Cadência (streak + recorde) ─────────────────────────────────────────────
+  const cadencia = useMemo(() => {
+    const entries        = getEntries();
+    const datesWithData  = new Set(entries.map(e => e.date));
+    const today          = new Date();
+    const todayKey       = getLocalDateKey(today);
+    const checkedToday   = datesWithData.has(todayKey);
+
+    // Streak atual: conta para trás a partir de hoje (se registrou) ou ontem (se ainda não)
+    let streak = 0;
+    const d    = new Date(today);
+    if (!checkedToday) d.setDate(d.getDate() - 1);
+    while (datesWithData.has(getLocalDateKey(d))) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+
+    // Recorde: maior sequência de dias consecutivos de toda a história
+    const sorted = [...datesWithData].sort();
+    let record = 0, current = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      if (i === 0) {
+        current = 1;
+      } else {
+        const prev    = new Date(sorted[i - 1] + 'T12:00:00');
+        const curr    = new Date(sorted[i]     + 'T12:00:00');
+        const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
+        current = diffDays === 1 ? current + 1 : 1;
+      }
+      record = Math.max(record, current);
+    }
+
+    return { streak, record, checkedToday };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
   const weekData = useMemo(() => {
     const entries = getEntries();
     const today   = new Date();
@@ -190,11 +262,87 @@ const PadroesPage = () => {
   const hasAnyData   = weekData.some(d => d.entries.length > 0);
   const expandedData = weekData.find(d => d.date === expandedDay) ?? null;
 
+  // Cadência: derivado fora do hasAnyData para ficar sempre visível
+  const { streak, record, checkedToday } = cadencia;
+  const isAtRisk    = streak > 0 && !checkedToday;
+  const isNewRecord = checkedToday && streak > 0 && streak >= record;
+  const cadMessage  = getCadenciaMessage(streak);
+
   return (
     <div className="flex flex-col min-h-screen pb-24 px-4 pt-16 bg-muted/30">
-      <div className="px-2 mb-8">
-        <h1 className="text-2xl font-semibold text-foreground mb-1 tracking-tight">Evolução</h1>
-        <p className="text-sm text-muted-foreground">Seus últimos 7 dias</p>
+
+      {/* ── Cabeçalho ───────────────────────────────────────────────────── */}
+      <div className="px-2 mb-4">
+        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Evolução</h1>
+      </div>
+
+      {/* ── CADÊNCIA — sempre visível ────────────────────────────────────── */}
+      <div className={`rounded-2xl bg-card overflow-hidden mb-5 border ${
+        isAtRisk ? 'border-primary/30' : 'border-border/30'
+      }`}>
+        {/* Faixa de cor no topo */}
+        <div className={`h-[3px] ${
+          streak === 0 ? 'bg-muted/50' : isAtRisk ? 'bg-primary/50' : 'bg-primary'
+        }`} />
+
+        <div className="flex items-center gap-3.5 px-4 py-3.5">
+
+          {/* Ícone animado + label */}
+          <div className="flex flex-col items-center gap-0.5 shrink-0">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${
+              streak === 0
+                ? 'bg-muted/40 border-border/20 text-muted-foreground/25'
+                : 'bg-primary/10 border-primary/20 text-primary'
+            }`}>
+              <PendulumSwingIcon size={30} active={streak > 0} />
+            </div>
+            <span className={`text-[7px] font-black uppercase tracking-[0.12em] ${
+              streak === 0 ? 'text-muted-foreground/25' : 'text-primary/60'
+            }`}>
+              Cadência
+            </span>
+          </div>
+
+          {/* Número + mensagem */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-1.5 mb-0.5 flex-wrap">
+              <span className={`text-[32px] font-black leading-none tabular-nums ${
+                streak === 0 ? 'text-muted-foreground/20' : 'text-foreground'
+              }`}>
+                {streak}
+              </span>
+              <span className={`text-[13px] font-bold leading-none ${
+                streak === 0 ? 'text-muted-foreground/20' : 'text-foreground/80'
+              }`}>
+                {streak === 1 ? 'dia consecutivo' : 'dias consecutivos'}
+              </span>
+              {isNewRecord && streak > 1 && (
+                <span className="text-[8px] font-black text-primary uppercase tracking-wide bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full leading-none">
+                  Novo recorde!
+                </span>
+              )}
+            </div>
+            <p className={`text-[10px] leading-snug ${
+              isAtRisk ? 'text-primary font-semibold' : 'text-muted-foreground/50'
+            }`}>
+              {cadMessage}
+            </p>
+          </div>
+
+          {/* Recorde */}
+          <div className="shrink-0 flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1">
+              <span className={`text-[11px] ${record === 0 ? 'opacity-20' : ''}`}>🏆</span>
+              <span className={`text-[15px] font-bold tabular-nums ${
+                record === 0 ? 'text-muted-foreground/20' : 'text-muted-foreground/40'
+              }`}>
+                {record}
+              </span>
+            </div>
+            <span className="text-[8px] text-muted-foreground/25 uppercase tracking-wider">recorde</span>
+          </div>
+
+        </div>
       </div>
 
       {!hasAnyData ? (
@@ -206,7 +354,8 @@ const PadroesPage = () => {
         </div>
       ) : (
         <>
-          {/* ── Bolhas dos 7 dias ─────────────────────────────────────────── */}
+          {/* ── Últimos 7 dias ────────────────────────────────────────────── */}
+          <h2 className="px-2 text-lg font-bold text-foreground tracking-tight mb-3">Seus últimos 7 dias</h2>
           <div className="flex gap-1.5 mb-3">
             {weekData.map(({ label, dateLabel, date, entries: dayEntries }) => {
               const isToday    = date === getLocalDateKey();
@@ -247,6 +396,19 @@ const PadroesPage = () => {
                       isSelected || isToday ? 'text-primary/60' : 'text-muted-foreground/35'
                     }`}>{monthAbbr}</span>
                   </div>
+
+                  {/* Chevron acordeão */}
+                  {hasEntries && (
+                    <ChevronDown
+                      size={10}
+                      strokeWidth={2.5}
+                      className={`transition-transform duration-200 ${
+                        isSelected
+                          ? 'rotate-180 text-primary'
+                          : 'text-muted-foreground/30'
+                      }`}
+                    />
+                  )}
                 </button>
               );
             })}

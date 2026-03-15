@@ -341,10 +341,10 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                   ⚠️ Isso não tem volta
                 </p>
                 <p className="text-[12px] text-red-600/80 leading-relaxed">
-                  Apagar remove essa memória da sua biblioteca <span className="font-semibold">para sempre</span>. Você não ganha um novo registro no lugar — o limite do dia continua o mesmo.
+                  Essa memória será excluída da sua biblioteca <span className="font-semibold">para sempre</span>. Você não consegue fazer um novo registro em datas/horas passadas.
                 </p>
                 <p className="text-[12px] text-red-600/80 leading-relaxed mt-1.5">
-                  Se quiser mudar algo, use os campos de edição acima.
+                  Se quiser mudar algo, use os campos de edição abaixo.
                 </p>
               </div>
               <div className="flex border-t border-red-200">

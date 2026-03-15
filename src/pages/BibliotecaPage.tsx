@@ -5,7 +5,7 @@ import {
   PendulumEntry, getTodayKey, getLocalDateKey, PERIOD_CONFIG, DayPeriod,
   getTodayEntryCount, DAILY_FREE_LIMIT, getBobColor,
 } from '@/lib/pendulum';
-import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import PaywallPopup from '@/components/PaywallPopup';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
@@ -63,9 +63,10 @@ const FaceSvg = ({ value }: { value: number }) => {
 };
 
 // ─── Helpers de data ──────────────────────────────────────────────────────────
-const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-const MESES_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-const MESES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const DIAS_SEMANA  = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const MESES_CURTO  = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const MESES_LONGO  = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const MESES_TITULO = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 const parseDateKey = (dateKey: string) => {
   const [y, m, d] = dateKey.split('-').map(Number);
@@ -497,9 +498,25 @@ const DayCard = ({
 // ─── BibliotecaPage ───────────────────────────────────────────────────────────
 const BibliotecaPage = () => {
   const navigate = useNavigate();
-  const [groups, setGroups]           = useState<{ date: string; entries: PendulumEntry[] }[]>([]);
+  const [groups, setGroups]             = useState<{ date: string; entries: PendulumEntry[] }[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<PendulumEntry | null>(null);
   const [showPaywall, setShowPaywall]   = useState(false);
+
+  // ── Filtro de mês ────────────────────────────────────────────────────────────
+  const _today    = new Date();
+  const [navYear,  setNavYear]  = useState(_today.getFullYear());
+  const [navMonth, setNavMonth] = useState(_today.getMonth());
+  const isAtCurrent = navYear === _today.getFullYear() && navMonth === _today.getMonth();
+
+  const goToPrev = () => {
+    if (navMonth === 0) { setNavYear(y => y - 1); setNavMonth(11); }
+    else setNavMonth(m => m - 1);
+  };
+  const goToNext = () => {
+    if (isAtCurrent) return;
+    if (navMonth === 11) { setNavYear(y => y + 1); setNavMonth(0); }
+    else setNavMonth(m => m + 1);
+  };
 
   const handleAddNew = () => {
     if (getTodayEntryCount() >= DAILY_FREE_LIMIT) {
@@ -533,6 +550,12 @@ const BibliotecaPage = () => {
     reload();
   };
 
+  // Grupos filtrados pelo mês selecionado
+  const filteredGroups = groups.filter(({ date }) => {
+    const [y, m] = date.split('-').map(Number);
+    return y === navYear && m - 1 === navMonth;
+  });
+
   if (groups.length === 0) {
     return (
       <div className="flex flex-col min-h-screen pb-[88px] items-center justify-center text-center px-8 bg-muted/30">
@@ -547,20 +570,53 @@ const BibliotecaPage = () => {
     <>
       <div className="flex flex-col min-h-screen pb-[88px] bg-muted/30">
         {/* Header */}
-        <div className="px-5 pt-10 pb-5">
+        <div className="px-5 pt-10 pb-3">
           <h2 className="text-lg font-semibold text-foreground tracking-tight">Biblioteca de Emoções</h2>
         </div>
 
-        {groups.map(({ date, entries: dayEntries }) => (
-          <DayCard
-            key={date}
-            date={date}
-            entries={dayEntries}
-            onRequestDelete={setDeleteTarget}
-            onEdited={reload}
-            onAddNew={handleAddNew}
-          />
-        ))}
+        {/* ── Seletor de mês ─────────────────────────────────────────────────── */}
+        <div className="px-5 pb-4 flex items-center gap-0.5">
+          <button
+            onClick={goToPrev}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground/50 hover:bg-muted active:bg-muted/80 transition-colors"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-[13px] font-semibold text-foreground/70 w-[108px] text-center">
+            {MESES_TITULO[navMonth]} {navYear}
+          </span>
+          <button
+            onClick={goToNext}
+            disabled={isAtCurrent}
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+              isAtCurrent
+                ? 'opacity-20 cursor-default'
+                : 'text-muted-foreground/50 hover:bg-muted active:bg-muted/80'
+            }`}
+          >
+            <ChevronRight size={15} />
+          </button>
+        </div>
+
+        {filteredGroups.length > 0 ? (
+          filteredGroups.map(({ date, entries: dayEntries }) => (
+            <DayCard
+              key={date}
+              date={date}
+              entries={dayEntries}
+              onRequestDelete={setDeleteTarget}
+              onEdited={reload}
+              onAddNew={handleAddNew}
+            />
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center flex-1 text-center px-8 py-16">
+            <p className="text-3xl mb-3">🗓️</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhum registro em {MESES_LONGO[navMonth]}.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Popup de confirmação de exclusão */}
