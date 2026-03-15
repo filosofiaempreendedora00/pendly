@@ -256,7 +256,8 @@ const PadroesPage = () => {
                   const mood  = getMoodLabel(entry.position);
 
                   return (
-                    <div key={i} className="flex items-center gap-3">
+                    <div key={i} className="flex items-center gap-2.5">
+
                       {/* Carinha */}
                       <div
                         className="relative w-9 h-9 rounded-full shrink-0"
@@ -265,16 +266,22 @@ const PadroesPage = () => {
                         <FaceSvg value={entry.position} />
                       </div>
 
-                      {/* Barra + mood + horário */}
-                      <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                      {/* Mood + horário — textos à esquerda do gráfico */}
+                      <div className="flex flex-col gap-0.5 shrink-0 w-[58px]">
+                        <span className="text-[9px] font-semibold leading-tight" style={{ color }}>{mood}</span>
+                        {time && <span className="text-[8px] text-muted-foreground/40 leading-none">{time}</span>}
+                      </div>
+
+                      {/* Gráfico: barra de intensidade + legendas */}
+                      <div className="flex-1 flex flex-col gap-1 min-w-0">
                         <SpectrumBar position={entry.position} />
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] text-muted-foreground/50 leading-none">{mood}</span>
-                          {time && <span className="text-[9px] text-muted-foreground/35 leading-none">{time}</span>}
+                        <div className="flex justify-between">
+                          <span className="text-[8px] text-muted-foreground/25 uppercase tracking-wide leading-none">Horrível</span>
+                          <span className="text-[8px] text-muted-foreground/25 uppercase tracking-wide leading-none">Incrível</span>
                         </div>
                       </div>
 
-                      {/* CTA elegante */}
+                      {/* CTA */}
                       <button
                         onClick={() => setSelectedEntry(entry)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/15 text-primary text-[10px] font-medium shrink-0 active:bg-primary/20 transition-colors"
