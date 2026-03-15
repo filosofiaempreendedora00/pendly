@@ -293,14 +293,16 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 sm:items-center">
+    // pb-24 garante que o card fique acima do BottomNav fixo (≈88px)
+    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-24 sm:items-center sm:pb-0">
 
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
       <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
-        <div className="max-h-[88vh] overflow-y-auto overscroll-contain">
+        {/* max-h usa dvh para respeitar o chrome do browser mobile */}
+        <div className="max-h-[72dvh] sm:max-h-[82dvh] overflow-y-auto overscroll-contain">
 
           {/* ── Top bar: delete left, close right ─────────────────────────── */}
           <div className="flex items-center justify-between px-5 pt-4 pb-1">
@@ -320,24 +322,34 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
             </button>
           </div>
 
-          {/* Delete confirmation bar */}
+          {/* Delete confirmation — enfático */}
           {showDeleteConfirm && (
-            <div className="mx-5 mb-1 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-3">
-              <p className="flex-1 text-[12px] text-red-600 leading-snug">
-                Apagar essa memória pra sempre?
-              </p>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="text-[11px] font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors px-1"
-              >
-                Não
-              </button>
-              <button
-                onClick={onDelete}
-                className="px-3 py-1.5 rounded-xl bg-red-500 text-white text-[11px] font-semibold active:bg-red-600 transition-colors"
-              >
-                Apagar
-              </button>
+            <div className="mx-5 mb-2 rounded-2xl bg-red-50 border border-red-200 overflow-hidden">
+              <div className="px-4 pt-4 pb-3">
+                <p className="text-[13px] font-bold text-red-700 leading-snug mb-1.5">
+                  ⚠️ Isso não tem volta
+                </p>
+                <p className="text-[12px] text-red-600/80 leading-relaxed">
+                  Apagar remove essa memória da sua biblioteca <span className="font-semibold">para sempre</span>. Você não ganha um novo registro no lugar — o limite do dia continua o mesmo.
+                </p>
+                <p className="text-[12px] text-red-600/80 leading-relaxed mt-1.5">
+                  Se quiser mudar algo, use os campos de edição acima.
+                </p>
+              </div>
+              <div className="flex border-t border-red-200">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2.5 text-[12px] font-semibold text-muted-foreground/60 hover:text-muted-foreground transition-colors border-r border-red-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={onDelete}
+                  className="flex-1 py-2.5 text-[12px] font-bold text-red-600 hover:bg-red-100 active:bg-red-200 transition-colors"
+                >
+                  Apagar mesmo assim
+                </button>
+              </div>
             </div>
           )}
 
