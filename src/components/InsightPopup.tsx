@@ -145,10 +145,10 @@ const InsightPopup = ({
         onClick={onClose}
       />
 
-      {/* Card — sem linha de acento, borda limpa */}
+      {/* Card */}
       <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
-        <div className="px-6 pt-5 pb-6">
+        <div className="px-6 pt-5 pb-7">
 
           {/* Botão fechar */}
           <button
@@ -159,15 +159,14 @@ const InsightPopup = ({
             <X size={13} />
           </button>
 
-          {/* ── SEÇÃO 1: Confirmação + observação empática ────────────────── */}
-          <div className="flex flex-col items-center pt-1 pb-5">
+          {/* ── SEÇÃO 1: Confirmação de hábito ───────────────────────────── */}
+          <div className="flex flex-col items-center pt-1 pb-6">
 
-            {/* Ícone de check com confetti */}
+            {/* Check + confetti */}
             <div
-              className="relative flex items-center justify-center mb-4"
+              className="relative flex items-center justify-center mb-5"
               style={{ width: 80, height: 80 }}
             >
-              {/* Partículas de confetti */}
               {particles.map(p => (
                 <div
                   key={p.id}
@@ -186,7 +185,6 @@ const InsightPopup = ({
                 />
               ))}
 
-              {/* Círculo preenchido com respiração suave — sem sombra */}
               <div
                 className="check-ring w-16 h-16 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: PRIMARY }}
@@ -204,36 +202,43 @@ const InsightPopup = ({
               </div>
             </div>
 
-            {/* Título de confirmação */}
-            <p className="text-[14px] font-semibold text-foreground text-center leading-snug px-4">
-              Mais um registro pra sua Biblioteca de Emoções 📚
+            {/* Título curto de confirmação */}
+            <p className="text-[16px] font-semibold text-foreground text-center">
+              Registro feito
             </p>
 
-            {/* Observação empática — linha 1 da mensagem */}
-            <p className="text-[13.5px] text-muted-foreground/70 text-center leading-relaxed mt-2 px-2">
-              {line1}
+            {/* Subtexto de reforço */}
+            <p className="text-[12.5px] text-muted-foreground/55 text-center leading-relaxed mt-1.5 px-6">
+              Mais um momento guardado na sua Biblioteca de Emoções 📚
             </p>
           </div>
 
-          {/* Divisor */}
-          <div className="h-px bg-border/50 mb-5" />
+          {/* ── Divisor sutil ─────────────────────────────────────────────── */}
+          <div className="h-px bg-muted-foreground/15 mx-2 mb-6" />
 
-          {/* ── SEÇÃO 2: Pensamento reflexivo ────────────────────────────── */}
-          <div className="mb-6">
-            <div className="flex items-center gap-1.5 mb-3">
+          {/* ── SEÇÃO 2: Reflexão personalizada ──────────────────────────── */}
+          <div className="mb-7 text-center">
+
+            {/* Label centralizado */}
+            <div className="flex items-center justify-center gap-1.5 mb-4">
               <span className="text-[13px] leading-none">✨</span>
-              <span className="text-[10.5px] font-semibold text-muted-foreground/55 uppercase tracking-[0.15em]">
+              <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-[0.16em]">
                 Um pensamento pra você
               </span>
             </div>
 
-            {/* Pergunta reflexiva — linha 2 da mensagem */}
-            <p className="text-[15px] leading-relaxed text-foreground font-medium">
+            {/* Validação empática — suporte leve, menor e mais suave */}
+            <p className="text-[13px] text-foreground/60 leading-relaxed mb-3 px-3">
+              {line1}
+            </p>
+
+            {/* Pergunta reflexiva — mensagem principal, maior e mais forte */}
+            <p className="text-[16px] font-semibold text-foreground leading-snug px-2">
               {line2}
             </p>
           </div>
 
-          {/* ── Navegação por ícones em bolinhas ─────────────────────────── */}
+          {/* ── Ações por ícone ───────────────────────────────────────────── */}
           <div className="flex justify-center gap-10">
 
             <button
