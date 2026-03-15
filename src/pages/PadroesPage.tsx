@@ -1,231 +1,224 @@
 import { useMemo, useState } from 'react';
-import { getEntries, getZoneLabel, getZone, getAveragePosition, DayPeriod, PERIOD_CONFIG, getBobColor, ZONES, getLocalDateKey } from '@/lib/pendulum';
-import { TrendingUp, Sunrise, Sun, Moon, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry } from '@/lib/pendulum';
+import { TrendingUp, BookHeart } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
 
-const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const DAYS   = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
-const PERIOD_ICONS: Record<DayPeriod, (size?: number) => React.ReactNode> = {
-  morning: (size = 12) => <Sunrise size={size} className="text-primary" />,
-  afternoon: (size = 12) => <Sun size={size} className="text-primary" />,
-  night: (size = 12) => <Moon size={size} className="text-primary" />,
-};
-
-const PERIOD_ORDER: DayPeriod[] = ['morning', 'afternoon', 'night'];
-
-const SpectrumBar = ({ position, size = 'normal' }: { position: number; size?: 'normal' | 'small' }) => {
-  const h = size === 'small' ? 'h-1.5' : 'h-2';
-  const dotSize = size === 'small' ? 'w-2.5 h-2.5' : 'w-3 h-3';
-  const bobColor = getBobColor(position);
-
-  return (
-    <div className={`flex-1 relative ${h} rounded-full overflow-hidden`}>
-      <div
-        className="absolute inset-y-0 left-0 rounded-l-full"
-        style={{ width: `${position}%`, backgroundColor: bobColor }}
-      />
-      <div
-        className="absolute inset-y-0 right-0 rounded-r-full bg-muted"
-        style={{ width: `${100 - position}%` }}
-      />
-      <div
-        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 ${dotSize} rounded-full border-2 border-background z-10`}
-        style={{ left: `${position}%`, backgroundColor: bobColor }}
-      />
-    </div>
-  );
-};
-
-/* ── Saúde mental por turno – grouped by health zones ── */
-const HEALTH_ZONES = [
-  { key: 'healthy', label: 'Zona saudável', color: 'hsl(152, 38%, 42%)', check: (p: number) => (p >= 15 && p <= 85) && !(p < 15 || p > 85) },
-  { key: 'alert', label: 'Zona de alerta', color: 'hsl(40, 58%, 48%)', check: (_p: number) => false },
-  { key: 'critical', label: 'Zona crítica', color: 'hsl(8, 83%, 38%)', check: (p: number) => p < 15 || p > 85 },
+// ─── Mood labels (mesma tabela do Pêndulo e da Biblioteca) ───────────────────
+const MOODS = [
+  { label: 'Muuuito mal',   max: 11  },
+  { label: 'Muuito mal',    max: 22  },
+  { label: 'Muito mal',     max: 33  },
+  { label: 'Mal',           max: 44  },
+  { label: 'Mais ou menos', max: 56  },
+  { label: 'Bem',           max: 67  },
+  { label: 'Muito bem',     max: 78  },
+  { label: 'Muuito bem',    max: 89  },
+  { label: 'Muuuito bem',   max: 100 },
 ];
+const getMoodLabel = (v: number) => MOODS.find(m => v <= m.max)?.label ?? 'Muuuito bem';
 
-function classifyPosition(position: number): 'healthy' | 'alert' | 'critical' {
-  // Autocompaixão [15-35], Equilíbrio [35-65], Autorresponsabilidade [65-85]
-  if (position >= 15 && position <= 85) {
-    // Check if in transition zones (borders between safe and danger)
-    // Zones: 0-15 danger, 15-35 safe, 35-65 neutral, 65-85 safe, 85-100 danger
-    // Alert = transition areas near danger
-    if (position >= 15 && position < 22) return 'alert';
-    if (position > 78 && position <= 85) return 'alert';
-    return 'healthy';
+// ─── Lerp ────────────────────────────────────────────────────────────────────
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+// ─── getBobColor direcional (igual ao Pêndulo e à Biblioteca) ────────────────
+// NÃO usa o getBobColor do pendulum.ts — aquele é simétrico (Math.abs) e inverte
+// as cores em metade da escala. Este respeita a direção: 0=vermelho, 100=verde.
+const COLOR_STOPS = [
+  { pos: 0,   h: 0,   s: 72, l: 52 },
+  { pos: 11,  h: 8,   s: 73, l: 54 },
+  { pos: 22,  h: 16,  s: 75, l: 54 },
+  { pos: 33,  h: 28,  s: 72, l: 56 },
+  { pos: 44,  h: 46,  s: 80, l: 58 },
+  { pos: 48,  h: 35,  s: 25, l: 62 },
+  { pos: 50,  h: 215, s: 50, l: 58 },
+  { pos: 56,  h: 215, s: 50, l: 58 },
+  { pos: 67,  h: 152, s: 44, l: 50 },
+  { pos: 78,  h: 148, s: 52, l: 44 },
+  { pos: 89,  h: 145, s: 60, l: 40 },
+  { pos: 100, h: 143, s: 68, l: 33 },
+];
+const getBobColor = (v: number): string => {
+  for (let i = 1; i < COLOR_STOPS.length; i++) {
+    const prev = COLOR_STOPS[i - 1];
+    const curr = COLOR_STOPS[i];
+    if (v <= curr.pos) {
+      const range = curr.pos - prev.pos;
+      const t     = range === 0 ? 0 : (v - prev.pos) / range;
+      const useT  = (prev.h < 50 && curr.h > 100) ? (t < 0.5 ? 0 : 1) : t;
+      return `hsl(${Math.round(lerp(prev.h, curr.h, useT))}, ${Math.round(lerp(prev.s, curr.s, t))}%, ${Math.round(lerp(prev.l, curr.l, t))}%)`;
+    }
   }
-  return 'critical';
-}
-
-const ZONE_COLORS = {
-  healthy: 'hsl(152, 38%, 42%)',
-  alert: 'hsl(40, 58%, 48%)',
-  critical: 'hsl(8, 83%, 38%)',
+  const last = COLOR_STOPS[COLOR_STOPS.length - 1];
+  return `hsl(${last.h}, ${last.s}%, ${last.l}%)`;
 };
 
-const ZONE_LABELS = {
-  healthy: 'Saudável',
-  alert: 'Alerta',
-  critical: 'Crítica',
-};
-
-const MoodByPeriodChart = () => {
-  const data = useMemo(() => {
-    const entries = getEntries();
-    return PERIOD_ORDER.map((period) => {
-      const periodEntries = entries.filter(e => e.period === period);
-      const counts = { healthy: 0, alert: 0, critical: 0 };
-      periodEntries.forEach(e => { counts[classifyPosition(e.position)]++; });
-      return { period, counts, total: periodEntries.length };
-    });
-  }, []);
-
-  const hasData = data.some(d => d.total > 0);
-  if (!hasData) return null;
-
-  const zoneKeys: ('healthy' | 'alert' | 'critical')[] = ['healthy', 'alert', 'critical'];
-
+// ─── FaceSvg — idêntico ao Pêndulo e à Biblioteca ───────────────────────────
+// Regra da boca: ctrlY < endY → arco pra cima → ⌢ → triste (bad)
+//                ctrlY > endY → arco pra baixo → ⌣ → sorriso (good)
+const FaceSvg = ({ value }: { value: number }) => {
+  const mouthCtrlY = lerp(13, 35, value / 100); // 13=triste, 35=sorriso, 24=reto
+  const renderEyes = () => {
+    if (value <= 11) return (                          // chevron ">" "<" — raiva/tristeza intensa
+      <>
+        <path d="M 10,11 L 16,14 L 10,17" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.88" />
+        <path d="M 30,11 L 24,14 L 30,17" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.88" />
+      </>
+    );
+    if (value >= 89) return (                          // arco superior — felicidade intensa
+      <>
+        <path d="M 10,16 Q 13,11 16,16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.88" />
+        <path d="M 24,16 Q 27,11 30,16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.88" />
+      </>
+    );
+    const eyeRY = value > 78 ? 2 : 3;
+    const eyeY  = value > 78 ? 15 : 14;
+    return (
+      <>
+        <ellipse cx="13" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" />
+        <ellipse cx="27" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" />
+      </>
+    );
+  };
   return (
-    <div className="mt-10">
-      <h2 className="text-lg font-bold text-foreground mb-1 tracking-tight">
-        Saúde mental por turno
-      </h2>
-      <p className="text-xs text-muted-foreground mb-5">
-        Proporção de registros por zona de saúde em cada período do dia.
-      </p>
+    <svg viewBox="0 0 40 40" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+      {renderEyes()}
+      <path
+        d={`M 10,24 Q 20,${mouthCtrlY.toFixed(1)} 30,24`}
+        stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.88"
+      />
+    </svg>
+  );
+};
 
-      <div className="flex flex-col gap-3">
-        {data.map(({ period, counts, total }) => {
-          const pcts = {
-            healthy: total > 0 ? Math.round((counts.healthy / total) * 100) : 0,
-            alert: total > 0 ? Math.round((counts.alert / total) * 100) : 0,
-            critical: total > 0 ? Math.round((counts.critical / total) * 100) : 0,
-          };
-
-          return (
-            <div key={period} className="rounded-2xl bg-card p-4">
-              {/* Header */}
-              <div className="flex items-center gap-2 mb-3">
-                {PERIOD_ICONS[period](14)}
-                <span className="text-sm font-semibold text-foreground">
-                  {PERIOD_CONFIG[period].label}
-                </span>
-                <span className="text-[10px] text-muted-foreground/50 ml-auto">
-                  {total} {total === 1 ? 'registro' : 'registros'}
-                </span>
-              </div>
-
-              {total === 0 ? (
-                <div className="h-6 rounded-full bg-muted flex items-center justify-center">
-                  <span className="text-[10px] text-muted-foreground/40">sem dados</span>
-                </div>
-              ) : (
-                <>
-                  {/* Stacked bar */}
-                  <div className="flex h-6 rounded-full overflow-hidden gap-px">
-                    {zoneKeys.map((key) => {
-                      if (counts[key] === 0) return null;
-                      const pct = (counts[key] / total) * 100;
-                      return (
-                        <div
-                          key={key}
-                          className="relative flex items-center justify-center min-w-[20px] transition-all duration-300"
-                          style={{ width: `${pct}%`, backgroundColor: ZONE_COLORS[key] }}
-                        >
-                          {pct >= 15 && (
-                            <span className="text-[10px] font-bold text-white drop-shadow-sm">
-                              {pcts[key]}%
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Legend with percentages */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-                    {zoneKeys.map((key) => {
-                      if (counts[key] === 0) return null;
-                      return (
-                        <div key={key} className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ZONE_COLORS[key] }} />
-                          <span className="text-[10px] text-muted-foreground leading-none">
-                            {ZONE_LABELS[key]} · {pcts[key]}%
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
+// ─── SpectrumBar ─────────────────────────────────────────────────────────────
+const SpectrumBar = ({ position }: { position: number }) => {
+  const color = getBobColor(position);
+  return (
+    <div className="flex-1 relative h-1.5 rounded-full overflow-hidden">
+      <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: `${position}%`, backgroundColor: color }} />
+      <div className="absolute inset-y-0 right-0 rounded-r-full bg-muted" style={{ width: `${100 - position}%` }} />
+      <div
+        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 border-background z-10"
+        style={{ left: `${position}%`, backgroundColor: color }}
+      />
     </div>
   );
 };
 
+// ─── StackedFaces ─────────────────────────────────────────────────────────────
+// Ordem: mais recente na esquerda (i=0) e na frente (z-index maior)
+const FACE_SIZE = 20;
+const OFFSET    = 9; // px entre faces — mais próximas que antes
+
+const StackedFaces = ({ entries }: { entries: PendulumEntry[] }) => {
+  const shown  = entries.slice(0, 3);            // máx 3, já ordenado: [mais_recente, ...]
+  const totalW = FACE_SIZE + (shown.length - 1) * OFFSET;
+
+  if (shown.length === 0) {
+    return <div className="w-5 h-5 rounded-full bg-muted/60" />;
+  }
+
+  return (
+    <div className="relative" style={{ width: totalW, height: FACE_SIZE }}>
+      {shown.map((e, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full border-[1.5px] border-background"
+          style={{
+            width:           FACE_SIZE,
+            height:          FACE_SIZE,
+            left:            i * OFFSET,
+            zIndex:          shown.length - i,   // i=0 (mais recente) fica na frente
+            backgroundColor: getBobColor(e.position),
+          }}
+        >
+          <FaceSvg value={e.position} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── Horário ──────────────────────────────────────────────────────────────────
+const formatTime = (entry: PendulumEntry): string => {
+  if (!entry.timestamp) return '';
+  const d = new Date(entry.timestamp);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+// ─── PadroesPage ─────────────────────────────────────────────────────────────
 const PadroesPage = () => {
+  const navigate    = useNavigate();
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   const weekData = useMemo(() => {
     const entries = getEntries();
-    const today = new Date();
-    const days: { label: string; dateLabel: string; date: string; entries: { position: number; period?: DayPeriod }[]; avgPosition?: number }[] = [];
+    const today   = new Date();
+    const days: {
+      label:       string;
+      dateLabel:   string;
+      date:        string;
+      entries:     PendulumEntry[];
+      avgPosition?: number;
+    }[] = [];
 
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
+      const d   = new Date(today);
       d.setDate(d.getDate() - i);
       const key = getLocalDateKey(d);
-      const dayEntries = entries.filter((e) => e.date === key);
-      
+      // Mais recente primeiro
+      const dayEntries = entries
+        .filter(e => e.date === key)
+        .sort((a, b) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''));
+
       days.push({
-        label: DAYS[d.getDay()],
-        dateLabel: `${d.getDate()} ${MONTHS[d.getMonth()]}`,
-        date: key,
-        entries: dayEntries.map(e => ({ position: e.position, period: e.period })),
+        label:       DAYS[d.getDay()],
+        dateLabel:   `${d.getDate()} ${MONTHS[d.getMonth()]}`,
+        date:        key,
+        entries:     dayEntries,
         avgPosition: dayEntries.length > 0 ? getAveragePosition(dayEntries) : undefined,
       });
     }
     return days;
   }, []);
 
-  const hasAnyData = weekData.some((d) => d.entries.length > 0);
-  const expandedDayData = weekData.find(d => d.date === expandedDay) ?? null;
+  const hasAnyData   = weekData.some(d => d.entries.length > 0);
+  const expandedData = weekData.find(d => d.date === expandedDay) ?? null;
 
   return (
-    <div className="flex flex-col min-h-screen pb-24 px-6 pt-16 bg-muted/30">
-      <h1 className="text-2xl font-semibold text-foreground mb-1 tracking-tight">
-        Evolução
-      </h1>
-      <p className="text-sm text-muted-foreground mb-10">
-        Seus últimos 7 dias
-      </p>
+    <div className="flex flex-col min-h-screen pb-24 px-4 pt-16 bg-muted/30">
+      <div className="px-2 mb-8">
+        <h1 className="text-2xl font-semibold text-foreground mb-1 tracking-tight">Evolução</h1>
+        <p className="text-sm text-muted-foreground">Seus últimos 7 dias</p>
+      </div>
 
       {!hasAnyData ? (
-        <div className="flex flex-col items-center justify-center flex-1 text-center">
+        <div className="flex flex-col items-center justify-center flex-1 text-center px-8">
           <TrendingUp size={40} className="text-muted-foreground/30 mb-4" />
-          <p className="text-sm text-muted-foreground max-w-xs">
+          <p className="text-sm text-muted-foreground">
             Registre seu pêndulo diariamente para descobrir seus padrões emocionais.
           </p>
         </div>
       ) : (
         <>
-          {/* 7-day bubbles */}
+          {/* ── Bolhas dos 7 dias ─────────────────────────────────────────── */}
           <div className="flex gap-1.5 mb-3">
-            {weekData.map(({ label, dateLabel, date, entries: dayEntries, avgPosition }) => {
-              const isToday = date === getLocalDateKey();
+            {weekData.map(({ label, dateLabel, date, entries: dayEntries }) => {
+              const isToday    = date === getLocalDateKey();
               const hasEntries = dayEntries.length > 0;
               const isSelected = expandedDay === date;
-              const dotColor = avgPosition !== undefined ? getBobColor(avgPosition) : null;
-              const dayNum = dateLabel.split(' ')[0];
+              const dayNum     = dateLabel.split(' ')[0];
+              const monthAbbr  = dateLabel.split(' ')[1];
 
               return (
                 <button
                   key={date}
                   onClick={() => hasEntries && setExpandedDay(isSelected ? null : date)}
-                  className={`flex flex-col items-center gap-1 flex-1 py-2.5 rounded-2xl transition-all ${
+                  className={`flex flex-col items-center gap-1.5 flex-1 py-2.5 px-1 rounded-2xl transition-all ${
                     isSelected
                       ? 'bg-primary/10 ring-1 ring-primary/20'
                       : isToday
@@ -239,79 +232,65 @@ const PadroesPage = () => {
                     {label}
                   </span>
 
-                  <div className="w-7 h-7 rounded-full bg-muted/60 flex items-center justify-center my-0.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full transition-colors duration-300"
-                      style={{ backgroundColor: dotColor ?? 'hsl(220,10%,82%)' }}
-                    />
+                  {/* Carinhas sobrepostas */}
+                  <div className="flex items-center justify-center my-0.5 h-6">
+                    <StackedFaces entries={dayEntries} />
                   </div>
 
+                  {/* Data */}
                   <div className="flex flex-col items-center leading-none gap-px">
                     <span className={`text-[11px] font-semibold ${
                       isSelected || isToday ? 'text-primary' : 'text-muted-foreground/60'
-                    }`}>
-                      {dayNum}
-                    </span>
+                    }`}>{dayNum}</span>
                     <span className={`text-[8px] uppercase tracking-wide ${
                       isSelected || isToday ? 'text-primary/60' : 'text-muted-foreground/35'
-                    }`}>
-                      {dateLabel.split(' ')[1]}
-                    </span>
+                    }`}>{monthAbbr}</span>
                   </div>
-
-                  {hasEntries && (
-                    <ChevronDown
-                      size={10}
-                      className={`transition-transform duration-200 ${
-                        isSelected
-                          ? 'rotate-180 text-primary/60'
-                          : 'text-muted-foreground/30'
-                      }`}
-                    />
-                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* Expanded day detail card */}
-          {expandedDayData && expandedDayData.entries.length > 0 && (
-            <div className="rounded-2xl bg-card p-4 mb-6 animate-in slide-in-from-top-1 duration-200">
-              <div className="flex items-center mb-3">
-                <span className="text-sm font-semibold text-foreground">
-                  {expandedDayData.label}
-                </span>
-                <span className="font-normal text-muted-foreground/50 ml-1.5 text-xs">
-                  {expandedDayData.dateLabel}
-                </span>
+          {/* ── Detalhe do dia expandido ──────────────────────────────────── */}
+          {expandedData && expandedData.entries.length > 0 && (
+            <div className="rounded-2xl bg-card border border-border/30 overflow-hidden mb-6 animate-in slide-in-from-top-1 duration-200">
+              <div className="px-4 pt-3 pb-2 flex items-baseline gap-2 border-b border-border/20">
+                <span className="text-[13px] font-bold text-foreground">{expandedData.label}</span>
+                <span className="text-[11px] text-muted-foreground/50 font-medium">{expandedData.dateLabel}</span>
               </div>
 
-              <div className="flex flex-col divide-y divide-border/30 pt-1">
-                {PERIOD_ORDER.map((period) => {
-                  const subEntry = expandedDayData.entries.find(e => e.period === period);
+              <div className="px-4 py-3 flex flex-col gap-4">
+                {expandedData.entries.map((entry, i) => {
+                  const color = getBobColor(entry.position);
+                  const time  = formatTime(entry);
+                  const mood  = getMoodLabel(entry.position);
+
                   return (
-                    <div key={period} className="flex items-center gap-3 py-2.5 min-h-[2.75rem]">
-                      {/* Turno */}
-                      <div className="flex items-center gap-1.5 w-16 shrink-0">
-                        {PERIOD_ICONS[period](12)}
-                        <span className="text-xs font-medium text-foreground/70">
-                          {PERIOD_CONFIG[period].label}
+                    <div key={i} className="flex items-center gap-3">
+                      {/* Carinha */}
+                      <div
+                        className="relative w-9 h-9 rounded-full shrink-0"
+                        style={{ backgroundColor: color, boxShadow: `0 2px 8px ${color}50` }}
+                      >
+                        <FaceSvg value={entry.position} />
+                      </div>
+
+                      {/* Barra + mood · horário */}
+                      <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                        <SpectrumBar position={entry.position} />
+                        <span className="text-[10px] text-muted-foreground/50 leading-none">
+                          {mood}{time ? ` · ${time}` : ''}
                         </span>
                       </div>
-                      {/* Barra */}
-                      <div className="flex-1">
-                        {subEntry ? (
-                          <SpectrumBar position={subEntry.position} size="small" />
-                        ) : (
-                          <div className="h-1.5 rounded-full bg-muted/50" />
-                        )}
-                      </div>
-                      {/* Label da zona */}
-                      <span className={`text-[10px] leading-tight text-right w-24 shrink-0 ${
-                        subEntry ? 'text-muted-foreground/60' : 'text-muted-foreground/25'
-                      }`}>
-                        {subEntry ? getZoneLabel(subEntry.position) : '—'}
-                      </span>
+
+                      {/* CTA elegante */}
+                      <button
+                        onClick={() => navigate('/biblioteca')}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/15 text-primary text-[10px] font-medium shrink-0 active:bg-primary/20 transition-colors"
+                      >
+                        <BookHeart size={10} />
+                        <span>Ver memória</span>
+                      </button>
                     </div>
                   );
                 })}
@@ -319,11 +298,10 @@ const PadroesPage = () => {
             </div>
           )}
 
-          {/* Saúde mental por turno */}
-          <MoodByPeriodChart />
-
           {/* Saúde mental no mês */}
-          <MonthlyHealthChart />
+          <div className="px-2">
+            <MonthlyHealthChart />
+          </div>
         </>
       )}
     </div>
