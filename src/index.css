@@ -78,6 +78,15 @@
 }
 
 @layer utilities {
+  /* Scrollbar invisível — conteúdo ainda scrollável, sem layout shift */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   .pendly-safe-zone {
     background-color: hsl(var(--pendly-safe-bg));
   }

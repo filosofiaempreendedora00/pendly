@@ -303,7 +303,7 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
       {/* Card */}
       <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
         {/* dvh desconta o chrome do browser mobile; deixa margem suficiente pro nav */}
-        <div className="max-h-[78dvh] overflow-y-auto overscroll-contain" style={{ scrollbarGutter: 'stable' }}>
+        <div className="scrollbar-hide max-h-[78dvh] overflow-y-auto overscroll-contain">
 
           {/* ── Top bar: delete left, close right ─────────────────────────── */}
           <div className="flex items-center justify-between px-5 pt-4 pb-1">
