@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry, getBobColor } from '@/lib/pendulum';
+import { useMemo, useState, useCallback } from 'react';
+import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry, getBobColor, updateEntry, deleteEntryFlex } from '@/lib/pendulum';
 import { TrendingUp } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
 import MemoryPopup from '@/components/MemoryPopup';
@@ -123,6 +123,26 @@ const formatTime = (entry: PendulumEntry): string => {
 const PadroesPage = () => {
   const [expandedDay, setExpandedDay]       = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry]   = useState<PendulumEntry | null>(null);
+  const [refreshKey,    setRefreshKey]      = useState(0);
+
+  const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
+
+  const handleMemorySave = useCallback((updates: Partial<Pick<PendulumEntry, 'emotions' | 'note' | 'photo' | 'audio'>>) => {
+    if (selectedEntry?.timestamp) {
+      updateEntry(selectedEntry.timestamp, updates);
+      // Keep popup open but refresh list in background
+      setSelectedEntry(prev => prev ? { ...prev, ...updates } : prev);
+      refresh();
+    }
+  }, [selectedEntry, refresh]);
+
+  const handleMemoryDelete = useCallback(() => {
+    if (selectedEntry) {
+      deleteEntryFlex(selectedEntry);
+      setSelectedEntry(null);
+      refresh();
+    }
+  }, [selectedEntry, refresh]);
 
   const weekData = useMemo(() => {
     const entries = getEntries();
@@ -153,7 +173,8 @@ const PadroesPage = () => {
       });
     }
     return days;
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   const hasAnyData   = weekData.some(d => d.entries.length > 0);
   const expandedData = weekData.find(d => d.date === expandedDay) ?? null;
@@ -279,6 +300,8 @@ const PadroesPage = () => {
         <MemoryPopup
           entry={selectedEntry}
           onClose={() => setSelectedEntry(null)}
+          onSave={handleMemorySave}
+          onDelete={handleMemoryDelete}
         />
       )}
     </div>

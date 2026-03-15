@@ -148,7 +148,7 @@ export function updateEntryNote(timestamp: string, note: string) {
 
 export function updateEntry(
   timestamp: string,
-  updates: Partial<Pick<PendulumEntry, 'note' | 'photo' | 'audio'>>,
+  updates: Partial<Pick<PendulumEntry, 'note' | 'photo' | 'audio' | 'emotions'>>,
 ) {
   const entries = getEntries().map(e =>
     e.timestamp === timestamp ? { ...e, ...updates } : e
