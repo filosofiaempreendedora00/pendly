@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { addEntry, getEntries, getTodayKey, getStatusLevel } from '@/lib/pendulum';
+import type { StatusLevel } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
 import EmotionModal from '@/components/EmotionModal';
+import InsightPopup from '@/components/InsightPopup';
 
 // ─── Data / hora ao vivo ─────────────────────────────────────────────────────
 const DIAS   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -150,6 +152,16 @@ const PenduloPage = () => {
   const [hasMoved,          setHasMoved]          = useState(false);
   const [showEmotionModal,  setShowEmotionModal]  = useState(false);
 
+  // ── Insight popup ────────────────────────────────────────────────────────
+  const [showInsight,  setShowInsight]  = useState(false);
+  const [insightData,  setInsightData]  = useState<{
+    emotions: string[];
+    note?: string;
+    position: number;
+    statusLevel: StatusLevel;
+    bobColor: string;
+  } | null>(null);
+
   useEffect(() => {
     const entries = getEntries().filter(e => e.date === todayKey);
     const last = entries.sort((a, b) =>
@@ -199,6 +211,15 @@ const PenduloPage = () => {
     setSaved(true);
     setHasMoved(false);
     setShowEmotionModal(false);
+    // Mostra popup de insight logo após o registro
+    setInsightData({
+      emotions,
+      note,
+      position,
+      statusLevel: getStatusLevel(position),
+      bobColor: getBobColor(position),
+    });
+    setShowInsight(true);
   };
 
   const bobColor  = getBobColor(position);
@@ -339,6 +360,19 @@ const PenduloPage = () => {
         statusLevel={getStatusLevel(position)}
         bobColor={bobColor}
       />
+
+      {/* ── Popup de insight pós-registro ── */}
+      {insightData && (
+        <InsightPopup
+          isOpen={showInsight}
+          onClose={() => setShowInsight(false)}
+          statusLevel={insightData.statusLevel}
+          position={insightData.position}
+          emotions={insightData.emotions}
+          note={insightData.note}
+          bobColor={insightData.bobColor}
+        />
+      )}
 
     </div>
   );
