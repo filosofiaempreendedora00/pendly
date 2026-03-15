@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { ChevronRight, ArrowLeft } from 'lucide-react';
 import PendulumSlider from '@/components/PendulumSlider';
 import NaoSeiFlow from '@/components/NaoSeiFlow';
 import { saveEntry, getEntries, getTodayKey, getCurrentPeriod, PERIOD_CONFIG, DayPeriod } from '@/lib/pendulum';
@@ -12,8 +15,7 @@ const PERIOD_ICONS: Record<DayPeriod, React.ReactNode> = {
 };
 
 // ─── Pêndulo v1 ────────────────────────────────────────────────────────────────
-// Snapshot da tela original do pêndulo, preservada para referência futura.
-const PenduloV1 = () => {
+const PenduloV1 = ({ onBack }: { onBack: () => void }) => {
   const todayKey = getTodayKey();
   const [position, setPosition] = useState(50);
   const [showNaoSei, setShowNaoSei] = useState(false);
@@ -48,8 +50,18 @@ const PenduloV1 = () => {
 
   return (
     <div className="flex flex-col min-h-screen pb-24">
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-24">
-        {/* Header */}
+      {/* Back button */}
+      <div className="px-6 pt-10 pb-2">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Armário
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
         <h1 className="text-[2rem] font-semibold text-foreground mb-1 tracking-tight text-center">
           Onde está seu pêndulo mental agora?
         </h1>
@@ -57,13 +69,11 @@ const PenduloV1 = () => {
           Toque em 'Descobrir' ou arraste o pêndulo para registrar
         </p>
 
-        {/* Pendulum */}
         <PendulumSlider
           value={position}
           onChange={(v) => { setPosition(v); setSaved(false); setHasMoved(true); }}
         />
 
-        {/* Buttons / saved state */}
         <div className="mt-10">
           {saved ? (
             <div className="flex flex-col items-center gap-2">
@@ -97,7 +107,6 @@ const PenduloV1 = () => {
           )}
         </div>
 
-        {/* Period selector */}
         <div className="flex items-center gap-1 bg-muted rounded-full p-1 mt-6">
           {(['morning', 'afternoon', 'night'] as DayPeriod[]).map((p) => (
             <button
@@ -126,44 +135,70 @@ const PenduloV1 = () => {
   );
 };
 
-// ─── CabidePage ────────────────────────────────────────────────────────────────
-// Telas arquivadas para referência / reuso futuro.
-const screens = [
-  { label: 'Pêndulo v1', component: <PenduloV1 /> },
+// ─── Armário de Testes ──────────────────────────────────────────────────────────
+type Cabide = {
+  label: string;
+  description: string;
+  action: 'inline' | 'navigate';
+  path?: string;
+};
+
+const cabides: Cabide[] = [
+  {
+    label: 'Pêndulo v1',
+    description: 'Interface original do pêndulo',
+    action: 'inline',
+  },
+  {
+    label: 'Equilibre-se',
+    description: 'Sessão de equilíbrio emocional',
+    action: 'navigate',
+    path: '/equilibrio',
+  },
 ];
 
 const CabidePage = () => {
-  const [active, setActive] = useState(0);
+  const navigate = useNavigate();
+  const [active, setActive] = useState<string | null>(null);
+
+  if (active === 'Pêndulo v1') {
+    return <PenduloV1 onBack={() => setActive(null)} />;
+  }
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-24 overflow-hidden">
       {/* Header */}
-      <div className="px-6 pt-10 pb-2">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
-          Cabide
-        </h2>
-        <div className="flex gap-2 flex-wrap">
-          {screens.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                active === i
-                  ? 'bg-foreground text-background border-foreground'
-                  : 'border-border text-muted-foreground hover:border-foreground/40'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+      <div className="px-6 pt-14 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-1">
+          Armário de testes
+        </p>
+        <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+          Cabides
+        </h1>
       </div>
 
-      {/* Divider */}
-      <div className="mx-6 my-2 border-t border-dashed border-border/60" />
-
-      {/* Archived screen */}
-      {screens[active].component}
+      {/* List */}
+      <div className="px-4">
+        {cabides.map((c, i) => (
+          <button
+            key={c.label}
+            onClick={() => {
+              if (c.action === 'inline') setActive(c.label);
+              else if (c.path) navigate(c.path);
+            }}
+            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl hover:bg-muted/60 active:bg-muted transition-colors"
+          >
+            <div className="flex items-center gap-3 text-left">
+              <span className="text-base">🧥</span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{c.label}</p>
+                <p className="text-xs text-muted-foreground/60 mt-0.5">{c.description}</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
