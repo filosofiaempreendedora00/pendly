@@ -291,19 +291,29 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
     );
   };
 
+  // ── Scroll lock: impede body de mudar de tamanho ao abrir o popup ─────────
+  useEffect(() => {
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const prev = { overflow: document.body.style.overflow, paddingRight: document.body.style.paddingRight };
+    document.body.style.overflow     = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    return () => {
+      document.body.style.overflow     = prev.overflow;
+      document.body.style.paddingRight = prev.paddingRight;
+    };
+  }, []);
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     // z-[60] > z-50 do BottomNav, garante que o popup fique acima do menu
-    // items-center centraliza o card longe do nav (mesma abordagem do PaywallPopup)
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
 
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Card */}
-      <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
-        {/* dvh desconta o chrome do browser mobile; deixa margem suficiente pro nav */}
-        <div className="scrollbar-hide max-h-[78dvh] overflow-y-auto overscroll-contain">
+      {/* Card — único container de overflow; elimina o aninhamento overflow-hidden + overflow-auto
+          que causava reflow e shift de elementos ao abrir o popup */}
+      <div className="scrollbar-hide relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 animate-in slide-in-from-bottom-4 duration-300 max-h-[78dvh] overflow-y-auto overscroll-contain">
 
           {/* ── Top bar: delete left, close right ─────────────────────────── */}
           <div className="flex items-center justify-between px-5 pt-4 pb-1">
@@ -657,7 +667,6 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
             </div>
           </div>
 
-        </div>
       </div>
     </div>
   );
