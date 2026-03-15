@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry } from '@/lib/pendulum';
+import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry, getBobColor } from '@/lib/pendulum';
 import { TrendingUp, BookHeart } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
 
@@ -21,40 +21,9 @@ const MOODS = [
 ];
 const getMoodLabel = (v: number) => MOODS.find(m => v <= m.max)?.label ?? 'Muuuito bem';
 
-// ─── Lerp ────────────────────────────────────────────────────────────────────
+// ─── Lerp (usado pelo FaceSvg e SpectrumBar) ─────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-// ─── getBobColor direcional (igual ao Pêndulo e à Biblioteca) ────────────────
-// NÃO usa o getBobColor do pendulum.ts — aquele é simétrico (Math.abs) e inverte
-// as cores em metade da escala. Este respeita a direção: 0=vermelho, 100=verde.
-const COLOR_STOPS = [
-  { pos: 0,   h: 0,   s: 72, l: 52 },
-  { pos: 11,  h: 8,   s: 73, l: 54 },
-  { pos: 22,  h: 16,  s: 75, l: 54 },
-  { pos: 33,  h: 28,  s: 72, l: 56 },
-  { pos: 44,  h: 46,  s: 80, l: 58 },
-  { pos: 48,  h: 35,  s: 25, l: 62 },
-  { pos: 50,  h: 215, s: 50, l: 58 },
-  { pos: 56,  h: 215, s: 50, l: 58 },
-  { pos: 67,  h: 152, s: 44, l: 50 },
-  { pos: 78,  h: 148, s: 52, l: 44 },
-  { pos: 89,  h: 145, s: 60, l: 40 },
-  { pos: 100, h: 143, s: 68, l: 33 },
-];
-const getBobColor = (v: number): string => {
-  for (let i = 1; i < COLOR_STOPS.length; i++) {
-    const prev = COLOR_STOPS[i - 1];
-    const curr = COLOR_STOPS[i];
-    if (v <= curr.pos) {
-      const range = curr.pos - prev.pos;
-      const t     = range === 0 ? 0 : (v - prev.pos) / range;
-      const useT  = (prev.h < 50 && curr.h > 100) ? (t < 0.5 ? 0 : 1) : t;
-      return `hsl(${Math.round(lerp(prev.h, curr.h, useT))}, ${Math.round(lerp(prev.s, curr.s, t))}%, ${Math.round(lerp(prev.l, curr.l, t))}%)`;
-    }
-  }
-  const last = COLOR_STOPS[COLOR_STOPS.length - 1];
-  return `hsl(${last.h}, ${last.s}%, ${last.l}%)`;
-};
+// getBobColor é importado de @/lib/pendulum — fonte única da verdade
 
 // ─── FaceSvg — idêntico ao Pêndulo e à Biblioteca ───────────────────────────
 // Regra da boca: ctrlY < endY → arco pra cima → ⌢ → triste (bad)
@@ -275,12 +244,13 @@ const PadroesPage = () => {
                         <FaceSvg value={entry.position} />
                       </div>
 
-                      {/* Barra + mood · horário */}
+                      {/* Barra + mood + horário */}
                       <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                         <SpectrumBar position={entry.position} />
-                        <span className="text-[10px] text-muted-foreground/50 leading-none">
-                          {mood}{time ? ` · ${time}` : ''}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] text-muted-foreground/50 leading-none">{mood}</span>
+                          {time && <span className="text-[9px] text-muted-foreground/35 leading-none">{time}</span>}
+                        </div>
                       </div>
 
                       {/* CTA elegante */}

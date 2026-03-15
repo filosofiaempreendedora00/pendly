@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addEntry, getEntries, getTodayKey, getStatusLevel, getTodayEntryCount, DAILY_FREE_LIMIT } from '@/lib/pendulum';
+import { addEntry, getEntries, getTodayKey, getStatusLevel, getTodayEntryCount, DAILY_FREE_LIMIT, getBobColor } from '@/lib/pendulum';
 import type { StatusLevel } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
 import EmotionModal from '@/components/EmotionModal';
@@ -64,38 +64,9 @@ const MOODS = [
 const getMoodLabel = (v: number) =>
   MOODS.find(m => v <= m.max)?.label ?? 'muuuito bem';
 
-// ─── Cor do pêndulo ──────────────────────────────────────────────────────────
-const COLOR_STOPS = [
-  { pos: 0,   h: 0,   s: 72, l: 52 },  // vermelho
-  { pos: 11,  h: 8,   s: 73, l: 54 },  // laranja-vermelho
-  { pos: 22,  h: 16,  s: 75, l: 54 },  // laranja
-  { pos: 33,  h: 28,  s: 72, l: 56 },  // âmbar
-  { pos: 44,  h: 46,  s: 80, l: 58 },  // amarelo
-  { pos: 48,  h: 35,  s: 25, l: 62 },  // neutro-quente
-  { pos: 50,  h: 215, s: 50, l: 58 },  // azul (centro)
-  { pos: 56,  h: 215, s: 50, l: 58 },  // azul (estendido)
-  { pos: 67,  h: 152, s: 44, l: 50 },  // verde
-  { pos: 78,  h: 148, s: 52, l: 44 },  // verde escuro
-  { pos: 89,  h: 145, s: 60, l: 40 },  // verde mais escuro
-  { pos: 100, h: 143, s: 68, l: 33 },  // verde escurissimo
-];
-
+// ─── Lerp (usado pelo FaceSvg) ───────────────────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-const getBobColor = (v: number): string => {
-  for (let i = 1; i < COLOR_STOPS.length; i++) {
-    const prev = COLOR_STOPS[i - 1];
-    const curr = COLOR_STOPS[i];
-    if (v <= curr.pos) {
-      const range = curr.pos - prev.pos;
-      const t = range === 0 ? 0 : (v - prev.pos) / range;
-      const useT = (prev.h < 50 && curr.h > 100) ? (t < 0.5 ? 0 : 1) : t;
-      return `hsl(${Math.round(lerp(prev.h, curr.h, useT))}, ${Math.round(lerp(prev.s, curr.s, t))}%, ${Math.round(lerp(prev.l, curr.l, t))}%)`;
-    }
-  }
-  const last = COLOR_STOPS[COLOR_STOPS.length - 1];
-  return `hsl(${last.h}, ${last.s}%, ${last.l}%)`;
-};
+// getBobColor é importado de @/lib/pendulum — fonte única da verdade
 
 // ─── Rostinho SVG ────────────────────────────────────────────────────────────
 const useBlink = () => {

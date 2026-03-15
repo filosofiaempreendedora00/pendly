@@ -190,19 +190,37 @@ export function getTodayKey(): string {
   return getLocalDateKey();
 }
 
+// ─── Canonical directional color scale (0=red → 50=blue → 100=green) ─────────
+// Source of truth for all face/bob colors across the app.
+// Do NOT use Math.abs — that creates a symmetric scale that inverts colors.
+const _lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const _COLOR_STOPS = [
+  { pos: 0,   h: 0,   s: 72, l: 52 },  // vermelho
+  { pos: 11,  h: 8,   s: 73, l: 54 },  // laranja-vermelho
+  { pos: 22,  h: 16,  s: 75, l: 54 },  // laranja
+  { pos: 33,  h: 28,  s: 72, l: 56 },  // âmbar
+  { pos: 44,  h: 46,  s: 80, l: 58 },  // amarelo
+  { pos: 48,  h: 35,  s: 25, l: 62 },  // neutro-quente
+  { pos: 50,  h: 215, s: 50, l: 58 },  // azul (centro)
+  { pos: 56,  h: 215, s: 50, l: 58 },  // azul (estendido)
+  { pos: 67,  h: 152, s: 44, l: 50 },  // verde
+  { pos: 78,  h: 148, s: 52, l: 44 },  // verde escuro
+  { pos: 89,  h: 145, s: 60, l: 40 },  // verde mais escuro
+  { pos: 100, h: 143, s: 68, l: 33 },  // verde escurissimo
+];
 export function getBobColor(position: number): string {
-  const dist = Math.abs(position - 50);
-  if (dist <= 15) return `hsl(152, 38%, 42%)`;
-  if (dist <= 35) {
-    const t = (dist - 15) / 20;
-    return `hsl(${152 - t * 112}, ${38 + t * 20}%, ${42 + t * 6}%)`;
+  for (let i = 1; i < _COLOR_STOPS.length; i++) {
+    const prev = _COLOR_STOPS[i - 1];
+    const curr = _COLOR_STOPS[i];
+    if (position <= curr.pos) {
+      const range = curr.pos - prev.pos;
+      const t     = range === 0 ? 0 : (position - prev.pos) / range;
+      const useT  = (prev.h < 50 && curr.h > 100) ? (t < 0.5 ? 0 : 1) : t;
+      return `hsl(${Math.round(_lerp(prev.h, curr.h, useT))}, ${Math.round(_lerp(prev.s, curr.s, t))}%, ${Math.round(_lerp(prev.l, curr.l, t))}%)`;
+    }
   }
-  if (dist <= 43) {
-    const t = (dist - 35) / 8;
-    return `hsl(${40 - t * 18}, ${58 + t * 15}%, ${48 - t * 6}%)`;
-  }
-  const t = (dist - 43) / 7;
-  return `hsl(${22 - t * 14}, ${73 + t * 10}%, ${42 - t * 4}%)`;
+  const last = _COLOR_STOPS[_COLOR_STOPS.length - 1];
+  return `hsl(${last.h}, ${last.s}%, ${last.l}%)`;
 }
 
 // Intervention content based on position

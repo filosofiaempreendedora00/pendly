@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   getEntries, deleteEntryFlex, updateEntry,
   PendulumEntry, getTodayKey, getLocalDateKey, PERIOD_CONFIG, DayPeriod,
+  getTodayEntryCount, DAILY_FREE_LIMIT, getBobColor,
 } from '@/lib/pendulum';
 import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus } from 'lucide-react';
 import PaywallPopup from '@/components/PaywallPopup';
-import { getTodayEntryCount, DAILY_FREE_LIMIT } from '@/lib/pendulum';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
 const MOODS = [
@@ -22,34 +22,9 @@ const MOODS = [
 ];
 const getMoodLabel = (v: number) => MOODS.find(m => v <= m.max)?.label ?? 'Muuuito bem';
 
-// ─── Cor do bob ───────────────────────────────────────────────────────────────
-const COLOR_STOPS = [
-  { pos: 0,   h: 0,   s: 72, l: 52 },
-  { pos: 22,  h: 8,   s: 74, l: 54 },
-  { pos: 33,  h: 16,  s: 75, l: 54 },
-  { pos: 44,  h: 26,  s: 80, l: 56 },
-  { pos: 50,  h: 215, s: 50, l: 58 },
-  { pos: 56,  h: 215, s: 50, l: 58 },
-  { pos: 67,  h: 152, s: 44, l: 50 },
-  { pos: 78,  h: 148, s: 52, l: 44 },
-  { pos: 89,  h: 145, s: 60, l: 40 },
-  { pos: 100, h: 143, s: 68, l: 33 },
-];
+// ─── Lerp (usado pelo FaceSvg) ───────────────────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const getBobColor = (v: number): string => {
-  for (let i = 1; i < COLOR_STOPS.length; i++) {
-    const prev = COLOR_STOPS[i - 1];
-    const curr = COLOR_STOPS[i];
-    if (v <= curr.pos) {
-      const range = curr.pos - prev.pos;
-      const t = range === 0 ? 0 : (v - prev.pos) / range;
-      const useT = (prev.h < 50 && curr.h > 100) ? (t < 0.5 ? 0 : 1) : t;
-      return `hsl(${Math.round(lerp(prev.h, curr.h, useT))}, ${Math.round(lerp(prev.s, curr.s, t))}%, ${Math.round(lerp(prev.l, curr.l, t))}%)`;
-    }
-  }
-  const last = COLOR_STOPS[COLOR_STOPS.length - 1];
-  return `hsl(${last.h}, ${last.s}%, ${last.l}%)`;
-};
+// getBobColor é importado de @/lib/pendulum — fonte única da verdade
 
 // ─── FaceSvg ──────────────────────────────────────────────────────────────────
 const FaceSvg = ({ value }: { value: number }) => {
