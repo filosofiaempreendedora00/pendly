@@ -1,8 +1,10 @@
 import { useMemo, useState, useCallback } from 'react';
-import { getEntries, getAveragePosition, getLocalDateKey, PendulumEntry, getBobColor, updateEntry, deleteEntryFlex } from '@/lib/pendulum';
-import { TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getEntries, getAveragePosition, getLocalDateKey, getTodayKey, getTodayEntryCount, DAILY_FREE_LIMIT, PendulumEntry, getBobColor, updateEntry, deleteEntryFlex } from '@/lib/pendulum';
+import { TrendingUp, Plus } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
 import MemoryPopup from '@/components/MemoryPopup';
+import PaywallPopup from '@/components/PaywallPopup';
 
 const DAYS   = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -120,9 +122,19 @@ const formatTime = (entry: PendulumEntry): string => {
 
 // ─── PadroesPage ─────────────────────────────────────────────────────────────
 const PadroesPage = () => {
+  const navigate = useNavigate();
   const [expandedDay, setExpandedDay]       = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry]   = useState<PendulumEntry | null>(null);
   const [refreshKey,    setRefreshKey]      = useState(0);
+  const [showPaywall,   setShowPaywall]     = useState(false);
+
+  const handleAddNew = useCallback(() => {
+    if (getTodayEntryCount() >= DAILY_FREE_LIMIT) {
+      setShowPaywall(true);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
@@ -243,9 +255,18 @@ const PadroesPage = () => {
           {/* ── Detalhe do dia expandido ──────────────────────────────────── */}
           {expandedData && expandedData.entries.length > 0 && (
             <div className="rounded-2xl bg-card border border-border/30 overflow-hidden mb-6 animate-in slide-in-from-top-1 duration-200">
-              <div className="px-4 pt-3 pb-2 flex items-baseline gap-2 border-b border-border/20">
+              <div className="px-4 pt-3 pb-2 flex items-center gap-2 border-b border-border/20">
                 <span className="text-[13px] font-bold text-foreground">{expandedData.label}</span>
                 <span className="text-[11px] text-muted-foreground/50 font-medium">{expandedData.dateLabel}</span>
+                {expandedData.date === getTodayKey() && (
+                  <button
+                    onClick={handleAddNew}
+                    className="ml-auto w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-sm shadow-primary/40 active:scale-90 transition-transform"
+                    aria-label="Novo registro"
+                  >
+                    <Plus size={14} strokeWidth={2.8} className="text-white" />
+                  </button>
+                )}
               </div>
 
               <div className="px-4 py-3 flex flex-col gap-4">
@@ -308,6 +329,14 @@ const PadroesPage = () => {
           onClose={() => setSelectedEntry(null)}
           onSave={handleMemorySave}
           onDelete={handleMemoryDelete}
+        />
+      )}
+
+      {/* Paywall: limite diário */}
+      {showPaywall && (
+        <PaywallPopup
+          onClose={() => setShowPaywall(false)}
+          onManageToday={() => setShowPaywall(false)}
         />
       )}
     </div>
