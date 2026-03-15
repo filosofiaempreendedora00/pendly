@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { TrendingUp, Shirt, BookHeart } from 'lucide-react';
+import { TrendingUp, FlaskConical, BookHeart } from 'lucide-react';
 
 const PendulumIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeWidth?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -14,7 +14,7 @@ const tabs = [
   { path: '/', icon: PendulumIcon, label: 'Pêndulo' },
   { path: '/biblioteca', icon: BookHeart, label: 'Biblioteca' },
   { path: '/padroes', icon: TrendingUp, label: 'Evolução' },
-  { path: '/cabide', icon: Shirt, label: 'Cabide' },
+  { path: '/cabide', icon: FlaskConical, label: 'Armário' },
 ];
 
 const BottomNav = () => {

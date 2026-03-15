@@ -170,11 +170,23 @@ const CabidePage = () => {
       {/* Header */}
       <div className="px-6 pt-14 pb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-1">
-          Armário de testes
+          Apenas para você
         </p>
         <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-          Cabides
+          Armário de Testes
         </h1>
+      </div>
+
+      {/* ── Aviso de contexto ────────────────────────────────────────── */}
+      <div className="mx-4 mb-5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex gap-3 items-start">
+        <span className="text-base shrink-0 mt-px">🗂️</span>
+        <div>
+          <p className="text-[11px] font-bold text-amber-800 mb-0.5 uppercase tracking-wide">Ambiente pessoal</p>
+          <p className="text-[11px] text-amber-700 leading-relaxed">
+            Aqui ficam telas e funcionalidades congeladas ou descontinuadas — um arquivo vivo pra eu não perder o que já construí.
+            Esse espaço não aparece pros outros usuários do app.
+          </p>
+        </div>
       </div>
 
       {/* List */}

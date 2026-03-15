@@ -5,6 +5,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+// getBobColor retorna hsl(...) — converte para hsla() para suportar alpha.
+const withAlpha = (hsl: string, alpha: number) =>
+  hsl.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`);
+
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 const MONTH_NAMES = [
@@ -15,15 +19,23 @@ const MONTH_NAMES = [
 // 9 estados — exatamente os mesmos da tela do pêndulo, do pior ao melhor.
 // repPos: posição representativa usada pra gerar a cor do chip na legenda.
 const MOODS = [
-  { label: 'Muuuito mal',   max: 11,  repPos: 5  },
-  { label: 'Muuito mal',    max: 22,  repPos: 16 },
-  { label: 'Muito mal',     max: 33,  repPos: 27 },
-  { label: 'Mal',           max: 44,  repPos: 38 },
-  { label: 'Mais ou menos', max: 56,  repPos: 50 },
-  { label: 'Bem',           max: 67,  repPos: 61 },
-  { label: 'Muito bem',     max: 78,  repPos: 72 },
-  { label: 'Muuito bem',    max: 89,  repPos: 83 },
-  { label: 'Muuuito bem',   max: 100, repPos: 95 },
+  { label: 'Muuuito mal',   max: 11,  repPos: 5  },  // 0
+  { label: 'Muuito mal',    max: 22,  repPos: 16 },  // 1
+  { label: 'Muito mal',     max: 33,  repPos: 27 },  // 2
+  { label: 'Mal',           max: 44,  repPos: 38 },  // 3
+  { label: 'Mais ou menos', max: 56,  repPos: 50 },  // 4
+  { label: 'Bem',           max: 67,  repPos: 61 },  // 5
+  { label: 'Muito bem',     max: 78,  repPos: 72 },  // 6
+  { label: 'Muuito bem',    max: 89,  repPos: 83 },  // 7
+  { label: 'Muuuito bem',   max: 100, repPos: 95 },  // 8
+] as const;
+
+// Linhas da legenda: negativos (intensidade crescente) / neutro / positivos
+// Ordem visual L→R: Mal → Muito mal → Muuito mal → Muuuito mal
+const LEGEND_ROWS = [
+  [3, 2, 1, 0],   // negativos, crescente em intensidade
+  [4],             // neutro
+  [5, 6, 7, 8],   // positivos, crescente em intensidade
 ] as const;
 
 const getStatusLevel = (pos: number): number =>
@@ -64,6 +76,21 @@ const FaceMini = ({ value }: { value: number }) => {
     </svg>
   );
 };
+
+// ─── FaceChipIcon — carinha de 13px usada nos chips da legenda ────────────────
+const CHIP_FACE_SIZE = 13;
+const FaceChipIcon = ({ repPos }: { repPos: number }) => (
+  <div
+    className="relative rounded-full shrink-0"
+    style={{
+      width:           CHIP_FACE_SIZE,
+      height:          CHIP_FACE_SIZE,
+      backgroundColor: getBobColor(repPos),
+    }}
+  >
+    <FaceMini value={repPos} />
+  </div>
+);
 
 // ─── DayFaces — carinhas sobrepostas por dia ──────────────────────────────────
 // Faces ainda mais sobrepostas que no painel de 7 dias (FACE_OFFSET menor)
@@ -161,7 +188,7 @@ const MonthlyHealthChart = () => {
       {/* ── Cabeçalho + passador de mês ─────────────────────────────────── */}
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-lg font-bold text-foreground tracking-tight">
-          Saúde mental no mês
+          Seu mês em emoções
         </h2>
         <div className="flex items-center gap-0.5">
           <button
@@ -188,36 +215,10 @@ const MonthlyHealthChart = () => {
       </div>
 
       <p className="text-xs text-muted-foreground mb-4">
-        Toque nos estados para filtrar o gráfico.
+        Toque nos estados emocionais abaixo para filtrar o calendário.
       </p>
 
-      {/* ── Legenda filtrável — do pior ao melhor ───────────────────────── */}
-      <div className="flex flex-wrap gap-1.5 mb-5">
-        {MOODS.map((mood, level) => {
-          const color    = getBobColor(mood.repPos);
-          const isHidden = hiddenLevels.has(level);
-          return (
-            <button
-              key={level}
-              onClick={() => toggleLevel(level)}
-              className="px-2.5 py-1 rounded-full transition-all duration-150 active:scale-95"
-              style={{
-                fontSize:        9,
-                fontWeight:      600,
-                letterSpacing:   '0.025em',
-                backgroundColor: isHidden ? 'transparent' : `${color}1e`,
-                color:           isHidden ? 'hsl(var(--muted-foreground))' : color,
-                border:          `1.5px solid ${isHidden ? 'hsl(var(--border))' : `${color}55`}`,
-                opacity:         isHidden ? 0.40 : 1,
-              }}
-            >
-              {mood.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Grid do calendário ──────────────────────────────────────────── */}
+      {/* ── Grid do calendário + legenda ────────────────────────────────── */}
       <div className="rounded-2xl bg-card p-4">
 
         {/* Cabeçalhos dos dias da semana */}
@@ -282,6 +283,41 @@ const MonthlyHealthChart = () => {
             Nenhum registro em {MONTH_NAMES[navMonth].toLowerCase()}.
           </p>
         )}
+
+        {/* ── Separador ────────────────────────────────────────────────── */}
+        <div className="border-t border-border/30 mt-4 pt-4 flex flex-col gap-2">
+
+          {/* Legenda em 3 linhas semânticas */}
+          {LEGEND_ROWS.map((row, rowIdx) => (
+            <div key={rowIdx} className="flex justify-start gap-1.5 flex-wrap">
+              {row.map((level) => {
+                const mood     = MOODS[level];
+                const color    = getBobColor(mood.repPos);
+                const isHidden = hiddenLevels.has(level);
+                return (
+                  <button
+                    key={level}
+                    onClick={() => toggleLevel(level)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-full transition-all duration-150 active:scale-95"
+                    style={{
+                      fontSize:        9,
+                      fontWeight:      600,
+                      letterSpacing:   '0.025em',
+                      backgroundColor: isHidden ? 'transparent' : withAlpha(color, 0.12),
+                      color:           isHidden ? 'hsl(var(--muted-foreground))' : color,
+                      border:          `1.5px solid ${isHidden ? 'hsl(var(--border))' : withAlpha(color, 0.6)}`,
+                      opacity:         isHidden ? 0.40 : 1,
+                    }}
+                  >
+                    <FaceChipIcon repPos={mood.repPos} />
+                    {mood.label}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+
+        </div>
       </div>
     </div>
   );
