@@ -281,7 +281,7 @@ const PenduloPage = () => {
           Como você tá agora?
         </h1>
         <p className="text-sm text-muted-foreground mb-4 text-center">
-          Arraste o pêndulo para registrar seu humor
+          Arraste o pêndulo pra registrar seu humor
         </p>
 
         {/* Pêndulo + label */}

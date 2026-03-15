@@ -125,6 +125,18 @@ export function addEntry(entry: Omit<PendulumEntry, 'timestamp'>) {
   localStorage.setItem('pendly-entries', JSON.stringify(entries));
 }
 
+export function deleteEntry(timestamp: string) {
+  const entries = getEntries().filter(e => e.timestamp !== timestamp);
+  localStorage.setItem('pendly-entries', JSON.stringify(entries));
+}
+
+export function updateEntryNote(timestamp: string, note: string) {
+  const entries = getEntries().map(e =>
+    e.timestamp === timestamp ? { ...e, note } : e
+  );
+  localStorage.setItem('pendly-entries', JSON.stringify(entries));
+}
+
 export function getEntries(): PendulumEntry[] {
   try {
     return JSON.parse(localStorage.getItem('pendly-entries') || '[]');
