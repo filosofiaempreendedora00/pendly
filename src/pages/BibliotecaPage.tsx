@@ -279,7 +279,7 @@ const BibliotecaPage = () => {
     <div className="flex flex-col min-h-screen pb-[88px] bg-muted/30">
       {/* Header */}
       <div className="px-5 pt-10 pb-5">
-        <h2 className="text-lg font-semibold text-foreground tracking-tight">Biblioteca de Humor</h2>
+        <h2 className="text-lg font-semibold text-foreground tracking-tight">Biblioteca de Emoções</h2>
       </div>
 
       {/* Cards por dia */}

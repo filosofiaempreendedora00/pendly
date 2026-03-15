@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { X, Scale, TrendingUp } from 'lucide-react';
 import { generateInsight, type InsightInput } from '@/lib/insights';
 
-// ─── Cor primária do app ──────────────────────────────────────────────────────
-// Usa a variável CSS do tema para manter identidade visual
 const PRIMARY = 'hsl(var(--primary))';
 
 // ─── Confetti ────────────────────────────────────────────────────────────────
@@ -17,17 +15,16 @@ interface Particle {
   h: number;
   delay: number;
   duration: number;
-  radius: string; // '50%' = círculo, px = retângulo
+  radius: string;
   rotate: number;
 }
 
-// Paleta festiva mas suave, alinhada ao app
 const CONFETTI_COLORS = [
-  '#93c5fd', '#6ea8fe', '#a5b4fc',  // azuis
-  '#86efac', '#6ee7b7',              // verdes
-  '#fde68a', '#fbbf24',              // amarelos
-  '#f9a8d4', '#c4b5fd',             // rosa / lilás
-  '#ffffff',                          // branco
+  '#93c5fd', '#6ea8fe', '#a5b4fc',
+  '#86efac', '#6ee7b7',
+  '#fde68a', '#fbbf24',
+  '#f9a8d4', '#c4b5fd',
+  '#ffffff',
 ];
 
 const buildParticles = (): Particle[] =>
@@ -50,76 +47,50 @@ const buildParticles = (): Particle[] =>
     };
   });
 
-// ─── Som de torcida sintetizado via Web Audio API ─────────────────────────────
-const playSuccessSound = () => {
+// ─── Som de check / vitória ───────────────────────────────────────────────────
+// Duas notas com onda triangular — mais quentes e musicais do que sine puro.
+// G5 (784 Hz) → C6 (1047 Hz): intervalo de quarta perfeita, soa como "missão cumprida".
+const playCheckSound = () => {
   try {
     const AudioCtx =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
+    const ctx = new AudioCtx();
 
-    const ctx  = new AudioCtx();
-    const sr   = ctx.sampleRate;
-    const dur  = 2.2;
+    const hits: [number, number, number, number][] = [
+      // [freq,    startOffset, volume, duration]
+      [783.99,  0,     0.13, 0.45],   // G5 — primeiro ding
+      [1046.50, 0.17,  0.10, 0.55],   // C6 — segundo ding (mais alto, mais longo)
+    ];
 
-    // ── Ruído de multidão ──
-    const buf = ctx.createBuffer(2, Math.ceil(sr * dur), sr);
-    for (let ch = 0; ch < 2; ch++) {
-      const d = buf.getChannelData(ch);
-      for (let i = 0; i < d.length; i++) {
-        const t = i / sr;
-        const noise = Math.random() * 2 - 1;
-        // Modulação orgânica: simula irregularidade de palmas/vozes
-        const mod =
-          0.50 +
-          0.18 * Math.sin(t * 8.3  + ch * 0.9) +
-          0.15 * Math.sin(t * 5.7) +
-          0.12 * Math.sin(t * 14.1 + ch * 0.5) +
-          0.05 * (Math.random() - 0.5);
-        // Envelope: ataque rápido, sustain, decay exponencial
-        const attack = Math.min(t / 0.07, 1);
-        const decay  = Math.exp(-Math.max(t - 0.15, 0) * 1.4);
-        d[i] = noise * mod * attack * decay * 0.42;
-      }
-    }
+    hits.forEach(([freq, offset, vol, dur]) => {
+      // Onda principal: triangle (mais rica que sine, sem chiado)
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
 
-    const crowd = ctx.createBufferSource();
-    crowd.buffer = buf;
+      // Harmônico suave: sine na oitava acima, volume 1/5
+      const harm = ctx.createOscillator();
+      harm.type = 'sine';
+      harm.frequency.value = freq * 2;
 
-    // Bandpass para soar como multidão (corta sub-grave e agudo excessivo)
-    const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 450;
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      harm.connect(gain);
+      gain.connect(ctx.destination);
 
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 3800;
+      const t = ctx.currentTime + offset;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(vol,   t + 0.012); // ataque limpo
+      gain.gain.setValueAtTime(vol,             t + 0.025); // sustain brevíssimo
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
 
-    const crowdGain = ctx.createGain();
-    crowdGain.gain.setValueAtTime(0.55, ctx.currentTime);
-    crowdGain.gain.setValueAtTime(0.55, ctx.currentTime + 0.25);
-    crowdGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-
-    crowd.connect(hp);
-    hp.connect(lp);
-    lp.connect(crowdGain);
-    crowdGain.connect(ctx.destination);
-    crowd.start();
-    crowd.stop(ctx.currentTime + dur);
-
-    // ── "Pop" inicial (como estouro de confete) ──
-    const popBuf = ctx.createBuffer(1, Math.ceil(sr * 0.06), sr);
-    const pd = popBuf.getChannelData(0);
-    for (let i = 0; i < pd.length; i++) {
-      pd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sr * 0.008));
-    }
-    const pop     = ctx.createBufferSource();
-    pop.buffer    = popBuf;
-    const popGain = ctx.createGain();
-    popGain.gain.value = 0.35;
-    pop.connect(popGain);
-    popGain.connect(ctx.destination);
-    pop.start();
+      osc.start(t);
+      harm.start(t);
+      osc.stop(t + dur + 0.05);
+      harm.stop(t + dur + 0.05);
+    });
   } catch {
     // Web Audio não disponível
   }
@@ -158,7 +129,7 @@ const InsightPopup = ({
 
     if (!soundPlayed.current) {
       soundPlayed.current = true;
-      const t = setTimeout(playSuccessSound, 60);
+      const t = setTimeout(playCheckSound, 60);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -174,16 +145,8 @@ const InsightPopup = ({
         onClick={onClose}
       />
 
-      {/* Card */}
+      {/* Card — sem linha de acento, borda limpa */}
       <div className="relative w-full max-w-sm bg-background rounded-3xl shadow-2xl border border-border/30 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-        {/* Linha de acento no topo — cor primária do app */}
-        <div
-          className="h-[3px] w-full"
-          style={{
-            background: `linear-gradient(to right, transparent, ${PRIMARY}, transparent)`,
-          }}
-        />
 
         <div className="px-6 pt-5 pb-6">
 
@@ -191,18 +154,18 @@ const InsightPopup = ({
           <button
             onClick={onClose}
             aria-label="Fechar"
-            className="absolute top-[18px] right-4 w-7 h-7 rounded-full bg-muted/70 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+            className="absolute top-4 right-4 w-7 h-7 rounded-full bg-muted/70 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
           >
             <X size={13} />
           </button>
 
-          {/* ── SEÇÃO 1: Reforço de hábito ───────────────────────────────── */}
+          {/* ── SEÇÃO 1: Confirmação + observação empática ────────────────── */}
           <div className="flex flex-col items-center pt-1 pb-5">
 
             {/* Ícone de check com confetti */}
             <div
               className="relative flex items-center justify-center mb-4"
-              style={{ width: 96, height: 96 }}
+              style={{ width: 80, height: 80 }}
             >
               {/* Partículas de confetti */}
               {particles.map(p => (
@@ -223,19 +186,16 @@ const InsightPopup = ({
                 />
               ))}
 
-              {/* Círculo preenchido grande com checkmark */}
+              {/* Círculo preenchido com respiração suave — sem sombra */}
               <div
-                className="check-ring w-20 h-20 rounded-full flex items-center justify-center shadow-lg"
-                style={{
-                  backgroundColor: PRIMARY,
-                  boxShadow: `0 8px 28px hsl(var(--primary) / 0.35)`,
-                }}
+                className="check-ring w-16 h-16 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: PRIMARY }}
               >
-                <svg width="44" height="44" viewBox="0 0 40 40" fill="none">
+                <svg width="38" height="38" viewBox="0 0 40 40" fill="none">
                   <path
                     d="M10 20.5 L17 28 L30 13"
                     stroke="white"
-                    strokeWidth="3.2"
+                    strokeWidth="2.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     className="checkmark-path"
@@ -244,16 +204,21 @@ const InsightPopup = ({
               </div>
             </div>
 
-            {/* Texto de confirmação — só um, sem repetição */}
-            <p className="text-[16px] font-semibold text-foreground">
-              Registro realizado!
+            {/* Título de confirmação */}
+            <p className="text-[14px] font-semibold text-foreground text-center leading-snug px-4">
+              Mais um registro pra sua Biblioteca de Emoções 📚
+            </p>
+
+            {/* Observação empática — linha 1 da mensagem */}
+            <p className="text-[13.5px] text-muted-foreground/70 text-center leading-relaxed mt-2 px-2">
+              {line1}
             </p>
           </div>
 
           {/* Divisor */}
           <div className="h-px bg-border/50 mb-5" />
 
-          {/* ── SEÇÃO 2: Reflexão personalizada ──────────────────────────── */}
+          {/* ── SEÇÃO 2: Pensamento reflexivo ────────────────────────────── */}
           <div className="mb-6">
             <div className="flex items-center gap-1.5 mb-3">
               <span className="text-[13px] leading-none">✨</span>
@@ -262,10 +227,8 @@ const InsightPopup = ({
               </span>
             </div>
 
+            {/* Pergunta reflexiva — linha 2 da mensagem */}
             <p className="text-[15px] leading-relaxed text-foreground font-medium">
-              {line1}
-            </p>
-            <p className="text-[15px] leading-relaxed text-foreground/60 mt-2">
               {line2}
             </p>
           </div>
