@@ -67,11 +67,10 @@ const FaceSvg = ({ value }: { value: number }) => {
 const SpectrumBar = ({ position }: { position: number }) => {
   const color = getBobColor(position);
   return (
-    <div className="flex-1 relative h-1.5 rounded-full overflow-hidden">
-      <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: `${position}%`, backgroundColor: color }} />
-      <div className="absolute inset-y-0 right-0 rounded-r-full bg-muted" style={{ width: `${100 - position}%` }} />
+    <div className="w-full relative h-1.5 rounded-full overflow-hidden bg-muted/40">
+      <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${position}%`, backgroundColor: color }} />
       <div
-        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 border-background z-10"
+        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full border-[1.5px] border-background z-10"
         style={{ left: `${position}%`, backgroundColor: color }}
       />
     </div>
