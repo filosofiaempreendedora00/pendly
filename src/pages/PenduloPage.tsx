@@ -204,9 +204,9 @@ const GloveHint = ({
     q(700,  () => setPhase('travel'));
     q(2500, () => setPhase('press'));
     q(3100, () => { setPhase('drag'); });
-    q(3700, () => setArrowVisible(true));   // aparece quando o arco sai do rosto (~0.6s após drag)
-    q(4700, () => setPhase('fade'));
-    q(5300, () => onDone());
+    q(4650, () => setArrowVisible(true));   // aparece só ao fim do arco (arc-draw dura 1.6s → 3100+1600=4700ms)
+    q(5100, () => setPhase('fade'));        // 400ms para ver arco completo + pontinha antes de sumir
+    q(5700, () => onDone());
     return () => t.forEach(clearTimeout);
   }, [onDone]);
 
