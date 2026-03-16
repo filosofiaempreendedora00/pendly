@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import PendulumSlider from '@/components/PendulumSlider';
 import NaoSeiFlow from '@/components/NaoSeiFlow';
@@ -135,6 +134,179 @@ const PenduloV1 = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+// ─── GloveHint backup — dica de arrastar (arquivado do PenduloPage) ───────────
+const GloveHint = ({
+  bobPos,
+  pivotPos,
+  direction,
+  onDone,
+}: {
+  bobPos:   { x: number; y: number };
+  pivotPos: { x: number; y: number };
+  direction: 'left' | 'right';
+  onDone: () => void;
+}) => {
+  type Phase = 'spawn' | 'visible' | 'travel' | 'press' | 'drag' | 'fade';
+  const [phase, setPhase] = useState<Phase>('spawn');
+  const [arrowVisible, setArrowVisible] = useState(false);
+
+  const startPos = useRef({
+    x: 60 + Math.random() * (window.innerWidth - 120),
+    y: Math.min(window.innerHeight - 80, bobPos.y + 100 + Math.random() * 80),
+  }).current;
+
+  const { x: bx, y: by } = bobPos;
+  const R = Math.hypot(bx - pivotPos.x, by - pivotPos.y);
+  const swipeDist = Math.min(window.innerWidth * 0.22, 72, R * 0.45);
+  const dragDist  = swipeDist * (direction === 'right' ? 1 : -1);
+  const deltaY    = R - Math.sqrt(Math.max(0, R * R - swipeDist * swipeDist));
+  const arcEndX   = dragDist;
+  const arcEndY   = -deltaY;
+  const sqrtTerm  = Math.sqrt(Math.max(0, R * R - swipeDist * swipeDist));
+  const tanAngle  = direction === 'right'
+    ? Math.atan2(-swipeDist,  sqrtTerm) * (180 / Math.PI)
+    : Math.atan2(-swipeDist, -sqrtTerm) * (180 / Math.PI);
+  const bobR = 28;
+
+  useEffect(() => {
+    const t: ReturnType<typeof setTimeout>[] = [];
+    const q = (ms: number, fn: () => void) => t.push(setTimeout(fn, ms));
+    q(80,   () => setPhase('visible'));
+    q(700,  () => setPhase('travel'));
+    q(2500, () => setPhase('press'));
+    q(3100, () => setPhase('drag'));
+    q(4650, () => setArrowVisible(true));
+    q(5100, () => setPhase('fade'));
+    q(5700, () => onDone());
+    return () => t.forEach(clearTimeout);
+  }, [onDone]);
+
+  const atBob    = ['travel', 'press', 'drag', 'fade'].includes(phase);
+  const dragging = phase === 'drag' || phase === 'fade';
+
+  const handX = dragging ? bx + dragDist : atBob ? bx : startPos.x;
+  const handY = atBob ? by : startPos.y;
+  const opacity = phase === 'spawn' || phase === 'fade' ? 0 : 1;
+
+  const transition =
+    phase === 'visible' ? 'opacity 0.5s ease' :
+    phase === 'travel'  ? 'left 1.8s cubic-bezier(0.4,0,0.2,1), top 1.8s cubic-bezier(0.4,0,0.2,1)' :
+    phase === 'drag'    ? 'left 1.6s cubic-bezier(0.25,0.46,0.45,0.94)' :
+    phase === 'fade'    ? 'left 1.6s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.5s ease' :
+    'none';
+
+  const sweepFlag = direction === 'right' ? 1 : 0;
+  const arcPath   = `M 0,0 A ${R} ${R} 0 0 ${sweepFlag} ${arcEndX} ${arcEndY}`;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9999 }}>
+      {(phase === 'drag' || phase === 'fade') && (
+        <svg style={{
+          position: 'fixed', inset: 0, width: '100%', height: '100%',
+          pointerEvents: 'none', zIndex: 9998,
+          opacity: phase === 'fade' ? 0 : 1,
+          transition: phase === 'fade' ? 'opacity 0.5s ease' : 'none',
+        }}>
+          <g transform={`translate(${bx}, ${by})`}>
+            <path className="hint-arc-path" d={arcPath}
+              stroke="rgba(0,0,0,0.38)" strokeWidth="2.5" fill="none"
+              strokeLinecap="round" pathLength={1} strokeDasharray={1}
+            />
+            {arrowVisible && (
+              <g transform={`translate(${arcEndX}, ${arcEndY}) rotate(${tanAngle})`}>
+                <path d="M -7,-5 L 3,0 L -7,5" stroke="rgba(0,0,0,0.55)" strokeWidth="2.8"
+                  fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+            )}
+          </g>
+        </svg>
+      )}
+      <div style={{
+        position: 'absolute', left: handX, top: handY,
+        transform: 'translate(-50%, 0)', opacity, transition,
+        willChange: 'left, top, opacity', fontSize: '2rem', lineHeight: 1,
+        userSelect: 'none', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))',
+        zIndex: 9999,
+        ...(phase === 'press' ? {
+          transform: 'translate(-50%, 4px) scale(0.88)',
+          transitionProperty: 'transform', transitionDuration: '0.2s',
+        } : {}),
+      }}>👆</div>
+      {phase === 'press' && (
+        <div className="hint-ripple" style={{
+          position: 'absolute', left: bx, top: by,
+          transform: 'translate(-50%, -50%)', zIndex: 9997,
+        }} />
+      )}
+    </div>
+  );
+};
+
+// Demo wrapper para o Armário de Testes
+const GloveHintDemo = ({ onBack }: { onBack: () => void }) => {
+  const bobRef   = useRef<HTMLDivElement>(null);
+  const pivotRef = useRef<HTMLDivElement>(null);
+  const [showHint, setShowHint]     = useState(false);
+  const [bobPos,   setBobPos]       = useState<{ x: number; y: number } | null>(null);
+  const [pivotPos, setPivotPos]     = useState<{ x: number; y: number } | null>(null);
+  const [dir,      setDir]          = useState<'left' | 'right'>('right');
+
+  const triggerHint = useCallback(() => {
+    if (!bobRef.current || !pivotRef.current) return;
+    const rb = bobRef.current.getBoundingClientRect();
+    const rp = pivotRef.current.getBoundingClientRect();
+    setBobPos({ x: rb.left + rb.width / 2,   y: rb.top + rb.height / 2 });
+    setPivotPos({ x: rp.left + rp.width / 2, y: rp.top + rp.height / 2 });
+    setDir(Math.random() > 0.5 ? 'right' : 'left');
+    setShowHint(true);
+  }, []);
+
+  // Auto-trigger after 1.5s so it's easy to preview
+  useEffect(() => {
+    const t = setTimeout(triggerHint, 1500);
+    return () => clearTimeout(t);
+  }, [triggerHint]);
+
+  return (
+    <div className="flex flex-col min-h-screen pb-24 bg-muted/30">
+      <div className="px-6 pt-10 pb-2">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft size={15} />
+          Armário
+        </button>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-0">
+        {/* Pivot */}
+        <div ref={pivotRef} className="w-4 h-4 rounded-full bg-muted-foreground/30" />
+        {/* Rod */}
+        <div className="w-px bg-gradient-to-b from-muted-foreground/40 to-muted-foreground/20 mx-auto" style={{ height: 'clamp(80px,18dvh,180px)' }} />
+        {/* Bob */}
+        <div ref={bobRef} className="relative w-14 h-14 mx-auto" style={showHint ? { position: 'relative', zIndex: 10000 } : undefined}>
+          <div className="absolute inset-0 rounded-full bg-primary/80 flex items-center justify-center">
+            <span className="text-2xl">😐</span>
+          </div>
+        </div>
+      </div>
+      <div className="text-center pb-8">
+        <button
+          onClick={() => { setShowHint(false); setTimeout(triggerHint, 300); }}
+          className="text-sm text-primary underline"
+        >
+          Replay animação
+        </button>
+      </div>
+      {showHint && bobPos && pivotPos && (
+        <GloveHint
+          bobPos={bobPos}
+          pivotPos={pivotPos}
+          direction={dir}
+          onDone={() => setShowHint(false)}
+        />
+      )}
+    </div>
+  );
+};
+
 // ─── Armário de Testes ──────────────────────────────────────────────────────────
 type Cabide = {
   label: string;
@@ -161,6 +333,11 @@ const cabides: Cabide[] = [
     action: 'navigate',
     path: '/premium',
   },
+  {
+    label: 'Dica de swipe',
+    description: 'Animação GloveHint com arco e emoji 👆 (arquivada)',
+    action: 'inline',
+  },
 ];
 
 const CabidePage = () => {
@@ -169,6 +346,10 @@ const CabidePage = () => {
 
   if (active === 'Pêndulo v1') {
     return <PenduloV1 onBack={() => setActive(null)} />;
+  }
+
+  if (active === 'Dica de swipe') {
+    return <GloveHintDemo onBack={() => setActive(null)} />;
   }
 
   return (
