@@ -155,6 +155,12 @@ const cabides: Cabide[] = [
     action: 'navigate',
     path: '/equilibrio',
   },
+  {
+    label: 'Pendly Premium',
+    description: 'Landing page provisória de upgrade (em construção)',
+    action: 'navigate',
+    path: '/premium',
+  },
 ];
 
 const CabidePage = () => {

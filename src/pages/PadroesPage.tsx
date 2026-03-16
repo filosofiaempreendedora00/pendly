@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getEntries, getAveragePosition, getLocalDateKey, getTodayKey, getTodayEntryCount, DAILY_FREE_LIMIT, PendulumEntry, getBobColor, updateEntry, deleteEntryFlex } from '@/lib/pendulum';
 import { TrendingUp, Plus, ChevronDown } from 'lucide-react';
 import MonthlyHealthChart from '@/components/MonthlyHealthChart';
+import EmotionFrequencyChart from '@/components/EmotionFrequencyChart';
 import MemoryPopup from '@/components/MemoryPopup';
 import PaywallPopup from '@/components/PaywallPopup';
 
@@ -480,6 +481,11 @@ const PadroesPage = () => {
           {/* Saúde mental no mês */}
           <div className="px-2">
             <MonthlyHealthChart />
+          </div>
+
+          {/* Emoções predominantes */}
+          <div className="px-2">
+            <EmotionFrequencyChart refreshKey={refreshKey} />
           </div>
         </>
       )}

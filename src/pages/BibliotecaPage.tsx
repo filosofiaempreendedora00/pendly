@@ -28,7 +28,19 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 // ─── FaceSvg ──────────────────────────────────────────────────────────────────
 const FaceSvg = ({ value }: { value: number }) => {
+  // Delay e duração únicos por instância — piscadas dessincronizadas
+  const blinkDelay    = useRef(`${(Math.random() * 6).toFixed(2)}s`).current;
+  const blinkDuration = useRef(`${(3.2 + Math.random() * 2.4).toFixed(2)}s`).current;
+
   const mouthControlY = lerp(13, 35, value / 100);
+  const canBlink = value > 11 && value < 89;
+
+  const eyeStyle: React.CSSProperties = canBlink ? {
+    animation:       `face-blink ${blinkDuration} ${blinkDelay} infinite`,
+    transformBox:    'fill-box',
+    transformOrigin: 'center',
+  } : {};
+
   const renderEyes = () => {
     if (value <= 11) return (
       <>
@@ -46,8 +58,8 @@ const FaceSvg = ({ value }: { value: number }) => {
     const eyeY  = value > 78 ? 15 : 14;
     return (
       <>
-        <ellipse cx="13" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" />
-        <ellipse cx="27" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" />
+        <ellipse cx="13" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" style={eyeStyle} />
+        <ellipse cx="27" cy={eyeY} rx="2.5" ry={eyeRY} fill="white" opacity="0.88" style={eyeStyle} />
       </>
     );
   };

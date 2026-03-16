@@ -156,10 +156,176 @@ const FaceSvg = ({ value }: { value: number }) => {
   );
 };
 
+// ─── GloveHint — dica de arrastar ────────────────────────────────────────────
+const GloveHint = ({
+  bobPos,
+  pivotPos,
+  direction,
+  onDone,
+}: {
+  bobPos:   { x: number; y: number };
+  pivotPos: { x: number; y: number };
+  direction: 'left' | 'right';
+  onDone: () => void;
+}) => {
+  type Phase = 'spawn' | 'visible' | 'travel' | 'press' | 'drag' | 'fade';
+  const [phase, setPhase] = useState<Phase>('spawn');
+  const [arrowVisible, setArrowVisible] = useState(false);
+
+  const startPos = useRef({
+    x: 60 + Math.random() * (window.innerWidth - 120),
+    y: Math.min(window.innerHeight - 80, bobPos.y + 100 + Math.random() * 80),
+  }).current;
+
+  const { x: bx, y: by } = bobPos;
+  // Raio real do pêndulo (distância pivô → bob)
+  const R = Math.hypot(bx - pivotPos.x, by - pivotPos.y);
+  // Distância horizontal do swipe (limitada a R para não extrapolar o arco)
+  const swipeDist = Math.min(window.innerWidth * 0.22, 72, R * 0.45);
+  const dragDist  = swipeDist * (direction === 'right' ? 1 : -1);
+  // Quanto o bob sobe ao ser arrastado (arco circular real)
+  const deltaY    = R - Math.sqrt(Math.max(0, R * R - swipeDist * swipeDist));
+  // Endpoint do arco em coordenadas relativas ao bob
+  const arcEndX   = dragDist;
+  const arcEndY   = -deltaY;                         // negativo = sobe na tela
+  // Ângulo da tangente no endpoint — direção real de movimento do bob
+  // right: (sqrt(R²-d²), -d)/R → atan2(-d, sqrt) ; left: (-sqrt, -d)/R → atan2(-d, -sqrt)
+  const sqrtTerm = Math.sqrt(Math.max(0, R * R - swipeDist * swipeDist));
+  const tanAngle = direction === 'right'
+    ? Math.atan2(-swipeDist,  sqrtTerm) * (180 / Math.PI)
+    : Math.atan2(-swipeDist, -sqrtTerm) * (180 / Math.PI);
+  // Raio do bob (w-14 = 56px → r=28px)
+  const bobR = 28;
+
+  useEffect(() => {
+    const t: ReturnType<typeof setTimeout>[] = [];
+    const q = (ms: number, fn: () => void) => t.push(setTimeout(fn, ms));
+    q(80,   () => setPhase('visible'));
+    q(700,  () => setPhase('travel'));
+    q(2500, () => setPhase('press'));
+    q(3100, () => { setPhase('drag'); });
+    q(3700, () => setArrowVisible(true));   // aparece quando o arco sai do rosto (~0.6s após drag)
+    q(4700, () => setPhase('fade'));
+    q(5300, () => onDone());
+    return () => t.forEach(clearTimeout);
+  }, [onDone]);
+
+  const atBob    = ['travel', 'press', 'drag', 'fade'].includes(phase);
+  const dragging = phase === 'drag' || phase === 'fade';
+
+  const handX = dragging ? bx + dragDist : atBob ? bx : startPos.x;
+  const handY = atBob ? by : startPos.y;
+  const opacity = phase === 'spawn' || phase === 'fade' ? 0 : 1;
+
+  const transition =
+    phase === 'visible' ? 'opacity 0.5s ease' :
+    phase === 'travel'  ? 'left 1.8s cubic-bezier(0.4,0,0.2,1), top 1.8s cubic-bezier(0.4,0,0.2,1)' :
+    phase === 'drag'    ? 'left 1.6s cubic-bezier(0.25,0.46,0.45,0.94)' :
+    phase === 'fade'    ? 'left 1.6s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.5s ease' :
+    'none';
+
+  // SVG do arco: origem em (bx, by), overflow visible, z-index abaixo do emoji
+  const sweepFlag = direction === 'right' ? 1 : 0;
+  // Arco SVG circular real: M 0,0 A R R 0 0 sweep arcEndX arcEndY
+  const arcPath = `M 0,0 A ${R} ${R} 0 0 ${sweepFlag} ${arcEndX} ${arcEndY}`;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9999 }}>
+
+      {/* Arco circular real — atrás do emoji (zIndex menor) */}
+      {(phase === 'drag' || phase === 'fade') && (
+        <svg
+          width={0} height={0}
+          style={{
+            position: 'absolute',
+            left: bx,
+            top: by,
+            overflow: 'visible',
+            zIndex: 9998,
+            opacity: phase === 'fade' ? 0 : 1,
+            transition: phase === 'fade' ? 'opacity 0.5s ease' : 'none',
+          }}
+        >
+          <defs>
+            {/* ClipPath exclui área do bob (arco só aparece fora da carinha) */}
+            <clipPath id="hint-bob-clip" clipPathUnits="userSpaceOnUse">
+              <path
+                clipRule="evenodd"
+                d={`M -9999 -9999 H 9999 V 9999 H -9999 Z M ${bobR} 0 A ${bobR} ${bobR} 0 1 0 ${-bobR} 0 A ${bobR} ${bobR} 0 1 0 ${bobR} 0 Z`}
+              />
+            </clipPath>
+          </defs>
+
+          {/* Arco desenhado progressivamente */}
+          <path
+            className="hint-arc-path"
+            d={arcPath}
+            stroke="rgba(0,0,0,0.38)"
+            strokeWidth="2.5"
+            fill="none"
+            strokeLinecap="round"
+            pathLength={1}
+            strokeDasharray={1}
+            clipPath="url(#hint-bob-clip)"
+          />
+
+          {/* Pontinha — aparece quando o arco atinge o perímetro do rosto (~39% do arco)
+              A fração do arco dentro do bob ≈ arcsin(bobR/R)/arcsin(swipeDist/R)
+              Com R≈192, bobR=28, swipeDist≈72: ≈ 8.4°/22° ≈ 38% → delay ≈ 0.38×1.6s ≈ 0.6s */}
+          <g
+            transform={`translate(${arcEndX}, ${arcEndY}) rotate(${tanAngle})`}
+            style={{
+              opacity: arrowVisible ? 1 : 0,
+              transition: 'opacity 0.35s ease-out',
+            }}
+          >
+            <path d="M -5,-4 L 1,0 L -5,4" stroke="rgba(0,0,0,0.45)" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+        </svg>
+      )}
+
+      {/* Emoji 👆 — zIndex maior que o arco */}
+      <div
+        style={{
+          position: 'absolute',
+          left: handX,
+          top: handY,
+          transform: 'translate(-50%, 0)',
+          opacity,
+          transition,
+          willChange: 'left, top, opacity',
+          fontSize: '2rem',
+          lineHeight: 1,
+          userSelect: 'none',
+          filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))',
+          zIndex: 9999,
+          ...(phase === 'press' ? {
+            transform: 'translate(-50%, 4px) scale(0.88)',
+            transitionProperty: 'transform',
+            transitionDuration: '0.2s',
+          } : {}),
+        }}
+      >
+        👆
+      </div>
+
+      {/* Ripple de clique */}
+      {phase === 'press' && (
+        <div
+          className="hint-ripple"
+          style={{ position: 'absolute', left: bx, top: by, transform: 'translate(-50%, -50%)', zIndex: 9997 }}
+        />
+      )}
+    </div>
+  );
+};
+
 // ─── PenduloPage ─────────────────────────────────────────────────────────────
 const PenduloPage = () => {
   const navigate = useNavigate();
-  const trackRef = useRef<HTMLDivElement>(null);
+  const trackRef  = useRef<HTMLDivElement>(null);
+  const bobRef    = useRef<HTMLDivElement>(null);
+  const pivotRef  = useRef<HTMLDivElement>(null);
   const [isDraggingTrack, setIsDraggingTrack] = useState(false);
   const [isDraggingBob,   setIsDraggingBob]   = useState(false);
 
@@ -170,6 +336,43 @@ const PenduloPage = () => {
   const [showEmotionModal,  setShowEmotionModal]  = useState(false);
   const [showPaywall,       setShowPaywall]       = useState(false);
 
+  // ── Hint glove ───────────────────────────────────────────────────────────
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showHint,     setShowHint]     = useState(false);
+  const [hintDir,      setHintDir]      = useState<'left' | 'right'>('right');
+  const [hintBobPos,   setHintBobPos]   = useState<{ x: number; y: number } | null>(null);
+  const [hintPivotPos, setHintPivotPos] = useState<{ x: number; y: number } | null>(null);
+
+  const scheduleHint = useCallback(() => {
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    hintTimerRef.current = setTimeout(() => {
+      if (!bobRef.current || !pivotRef.current) return;
+      const rb = bobRef.current.getBoundingClientRect();
+      const rp = pivotRef.current.getBoundingClientRect();
+      setHintBobPos({ x: rb.left + rb.width / 2, y: rb.top + rb.height / 2 });
+      setHintPivotPos({ x: rp.left + rp.width / 2, y: rp.top + rp.height / 2 });
+      setHintDir(Math.random() > 0.5 ? 'right' : 'left');
+      setShowHint(true);
+    }, 10_000);
+  }, []);
+
+  const interruptHint = useCallback(() => {
+    setShowHint(false);
+    scheduleHint();
+  }, [scheduleHint]);
+
+  // Inicia timer ao montar
+  useEffect(() => {
+    scheduleHint();
+    return () => { if (hintTimerRef.current) clearTimeout(hintTimerRef.current); };
+  }, [scheduleHint]);
+
+  // Reseta ao interagir com o pêndulo
+  useEffect(() => {
+    if (isDraggingTrack || isDraggingBob) interruptHint();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDraggingTrack, isDraggingBob]);
+
   // ── Insight popup ────────────────────────────────────────────────────────
   const [showInsight,  setShowInsight]  = useState(false);
   const [insightData,  setInsightData]  = useState<{
@@ -179,6 +382,15 @@ const PenduloPage = () => {
     statusLevel: StatusLevel;
     bobColor: string;
   } | null>(null);
+
+  // Cancela quando modais abrem
+  useEffect(() => {
+    if (showEmotionModal || showPaywall || showInsight) {
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+      setShowHint(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEmotionModal, showPaywall, showInsight]);
 
   useEffect(() => {
     const entries = getEntries().filter(e => e.date === todayKey);
@@ -249,7 +461,7 @@ const PenduloPage = () => {
   const moodLabel = getMoodLabel(position);
 
   return (
-    <div className="flex flex-col h-[100dvh] pb-[88px] overflow-hidden">
+    <div className="flex flex-col h-[100dvh] pb-[88px] overflow-hidden" onPointerDown={interruptHint}>
 
       {/* ── Área superior: data/hora + header + pêndulo + label ── */}
       <div className="flex-1 flex flex-col items-center px-6 pt-5 min-h-0">
@@ -268,7 +480,7 @@ const PenduloPage = () => {
 
           {/* Pêndulo visual — cresce até no máximo 280px */}
           <div className="flex-1 relative w-full flex items-start justify-center overflow-hidden" style={{ maxHeight: '280px' }}>
-            <div className="absolute top-0 w-4 h-4 rounded-full bg-muted-foreground/30 z-10" />
+            <div ref={pivotRef} className="absolute top-0 w-4 h-4 rounded-full bg-muted-foreground/30 z-10" />
             <div
               className="absolute top-4 origin-top"
               style={{
@@ -280,7 +492,7 @@ const PenduloPage = () => {
                 className="w-px bg-gradient-to-b from-muted-foreground/40 to-muted-foreground/20 mx-auto"
                 style={{ height: 'clamp(80px, 18dvh, 180px)' }}
               />
-              <div className="relative w-14 h-14 mx-auto">
+              <div ref={bobRef} className="relative w-14 h-14 mx-auto">
                 <div
                   className="absolute -inset-5 rounded-full cursor-grab active:cursor-grabbing touch-none select-none z-10"
                   onPointerDown={onBobDown}
@@ -393,6 +605,16 @@ const PenduloPage = () => {
           emotions={insightData.emotions}
           note={insightData.note}
           bobColor={insightData.bobColor}
+        />
+      )}
+
+      {/* ── Hint glove ── */}
+      {showHint && hintBobPos && hintPivotPos && (
+        <GloveHint
+          bobPos={hintBobPos}
+          pivotPos={hintPivotPos}
+          direction={hintDir}
+          onDone={() => { setShowHint(false); scheduleHint(); }}
         />
       )}
 

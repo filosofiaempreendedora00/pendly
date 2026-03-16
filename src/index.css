@@ -178,6 +178,41 @@
   animation: entry-menu-in 0.18s ease-out forwards;
 }
 
+/* ── Hint glove (dica de arrastar no Pêndulo) ───────────────────────────── */
+@keyframes hint-ripple {
+  0%   { width: 8px;  height: 8px;  opacity: 0.7; }
+  100% { width: 52px; height: 52px; opacity: 0; }
+}
+.hint-ripple {
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.25);
+  animation: hint-ripple 0.55s ease-out forwards;
+}
+
+@keyframes arc-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.hint-arc-path {
+  animation: arc-draw 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Pontinha aparece quando o arco sai do perímetro do rosto (~38% do percurso ≈ 0.6s) */
+@keyframes arrow-appear {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.hint-arc-arrow {
+  opacity: 0;
+  animation: arrow-appear 0.35s ease-out 0.6s forwards;
+}
+
+/* ── Piscada dos rostos na Biblioteca ───────────────────────────────────── */
+@keyframes face-blink {
+  0%, 88%, 100% { transform: scaleY(1);    }
+  93%           { transform: scaleY(0.05); }
+}
+
 @keyframes tab-pop {
   0%   { transform: scale(1);    }
   28%  { transform: scale(1.28); }
