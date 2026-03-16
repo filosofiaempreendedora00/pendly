@@ -232,22 +232,23 @@ const GloveHint = ({
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9999 }}>
 
-      {/* Arco circular real — atrás do emoji (zIndex menor) */}
+      {/* Arco circular real — SVG full-screen para evitar clipping */}
       {(phase === 'drag' || phase === 'fade') && (
         <svg
-          width={0} height={0}
           style={{
-            position: 'absolute',
-            left: bx,
-            top: by,
-            overflow: 'visible',
+            position: 'fixed',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
             zIndex: 9998,
             opacity: phase === 'fade' ? 0 : 1,
             transition: phase === 'fade' ? 'opacity 0.5s ease' : 'none',
           }}
         >
           <defs>
-            {/* ClipPath exclui área do bob (arco só aparece fora da carinha) */}
+            {/* ClipPath exclui área do bob — coordenadas relativas ao bob (userSpaceOnUse com translate no <g>) */}
+            {/* Coordenadas locais ao <g translate(bx,by)> → origem = centro do bob */}
             <clipPath id="hint-bob-clip" clipPathUnits="userSpaceOnUse">
               <path
                 clipRule="evenodd"
@@ -256,30 +257,34 @@ const GloveHint = ({
             </clipPath>
           </defs>
 
-          {/* Arco desenhado progressivamente */}
-          <path
-            className="hint-arc-path"
-            d={arcPath}
-            stroke="rgba(0,0,0,0.38)"
-            strokeWidth="2.5"
-            fill="none"
-            strokeLinecap="round"
-            pathLength={1}
-            strokeDasharray={1}
-            clipPath="url(#hint-bob-clip)"
-          />
+          {/* Grupo centrado no bob */}
+          <g transform={`translate(${bx}, ${by})`}>
+            {/* Arco desenhado progressivamente */}
+            <path
+              className="hint-arc-path"
+              d={arcPath}
+              stroke="rgba(0,0,0,0.38)"
+              strokeWidth="2.5"
+              fill="none"
+              strokeLinecap="round"
+              pathLength={1}
+              strokeDasharray={1}
+              clipPath="url(#hint-bob-clip)"
+            />
 
-          {/* Pontinha — aparece quando o arco atinge o perímetro do rosto (~39% do arco)
-              A fração do arco dentro do bob ≈ arcsin(bobR/R)/arcsin(swipeDist/R)
-              Com R≈192, bobR=28, swipeDist≈72: ≈ 8.4°/22° ≈ 38% → delay ≈ 0.38×1.6s ≈ 0.6s */}
-          <g
-            transform={`translate(${arcEndX}, ${arcEndY}) rotate(${tanAngle})`}
-            style={{
-              opacity: arrowVisible ? 1 : 0,
-              transition: 'opacity 0.35s ease-out',
-            }}
-          >
-            <path d="M -5,-4 L 1,0 L -5,4" stroke="rgba(0,0,0,0.45)" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Pontinha — renderizada apenas quando arrowVisible */}
+            {arrowVisible && (
+              <g transform={`translate(${arcEndX}, ${arcEndY}) rotate(${tanAngle})`}>
+                <path
+                  d="M -7,-5 L 3,0 L -7,5"
+                  stroke="rgba(0,0,0,0.55)"
+                  strokeWidth="2.8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </g>
+            )}
           </g>
         </svg>
       )}
