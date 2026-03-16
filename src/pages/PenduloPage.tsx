@@ -246,18 +246,9 @@ const GloveHint = ({
             transition: phase === 'fade' ? 'opacity 0.5s ease' : 'none',
           }}
         >
-          <defs>
-            {/* ClipPath exclui área do bob — coordenadas relativas ao bob (userSpaceOnUse com translate no <g>) */}
-            {/* Coordenadas locais ao <g translate(bx,by)> → origem = centro do bob */}
-            <clipPath id="hint-bob-clip" clipPathUnits="userSpaceOnUse">
-              <path
-                clipRule="evenodd"
-                d={`M -9999 -9999 H 9999 V 9999 H -9999 Z M ${bobR} 0 A ${bobR} ${bobR} 0 1 0 ${-bobR} 0 A ${bobR} ${bobR} 0 1 0 ${bobR} 0 Z`}
-              />
-            </clipPath>
-          </defs>
-
-          {/* Grupo centrado no bob */}
+          {/* Grupo centrado no bob — arc começa em (0,0) = centro exato do bob.
+              O bob face tem z-index 10000 (acima do SVG 9998), logo cobre naturalmente
+              a parte interna do arco — o arco emerge EXATAMENTE horizontal (perpendicular à haste). */}
           <g transform={`translate(${bx}, ${by})`}>
             {/* Arco desenhado progressivamente */}
             <path
@@ -269,7 +260,6 @@ const GloveHint = ({
               strokeLinecap="round"
               pathLength={1}
               strokeDasharray={1}
-              clipPath="url(#hint-bob-clip)"
             />
 
             {/* Pontinha — renderizada apenas quando arrowVisible */}
@@ -497,7 +487,7 @@ const PenduloPage = () => {
                 className="w-px bg-gradient-to-b from-muted-foreground/40 to-muted-foreground/20 mx-auto"
                 style={{ height: 'clamp(80px, 18dvh, 180px)' }}
               />
-              <div ref={bobRef} className="relative w-14 h-14 mx-auto">
+              <div ref={bobRef} className="relative w-14 h-14 mx-auto" style={showHint ? { position: 'relative', zIndex: 10000 } : undefined}>
                 <div
                   className="absolute -inset-5 rounded-full cursor-grab active:cursor-grabbing touch-none select-none z-10"
                   onPointerDown={onBobDown}
