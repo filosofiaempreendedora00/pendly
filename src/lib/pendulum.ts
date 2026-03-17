@@ -69,6 +69,11 @@ export const ORDERED_UNIVERSAL_EMOTIONS: Record<StatusLevel, string[]> = {
   'muuuito-bem':   ['curiosidade', 'contemplação', 'surpresa', 'clareza',  'reflexão',    'nostalgia', 'alívio',   'cansaço',      'inquietação', 'sobrecarga'],
 };
 
+export const ALL_STANDARD_EMOTIONS = new Set([
+  ...Object.values(CONTEXTUAL_EMOTIONS).flat(),
+  ...Object.values(ORDERED_UNIVERSAL_EMOTIONS).flat(),
+]);
+
 export const ZONES = [
   { label: 'Autopiedade', range: [0, 15], type: 'danger' as const },
   { label: 'Autocompaixão', range: [15, 35], type: 'safe' as const },
@@ -406,4 +411,27 @@ export function getDailyIntervention(position: number, dateKey: string = getToda
   const variants = ZONE_INTERVENTIONS[zoneIndex];
   const seed = getDailySeed(dateKey, zoneIndex);
   return variants[seed % variants.length];
+}
+
+// ─── Custom emotions (persisted across sessions) ──────────────────────────────
+const CUSTOM_EMOTIONS_KEY = 'pendly_custom_emotions';
+
+export function getCustomEmotions(): string[] {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_EMOTIONS_KEY) ?? '[]'); }
+  catch { return []; }
+}
+
+export function saveCustomEmotion(emotion: string): void {
+  const list = getCustomEmotions();
+  if (!list.includes(emotion)) localStorage.setItem(CUSTOM_EMOTIONS_KEY, JSON.stringify([...list, emotion]));
+}
+
+export function deleteCustomEmotion(emotion: string): void {
+  localStorage.setItem(CUSTOM_EMOTIONS_KEY, JSON.stringify(getCustomEmotions().filter(e => e !== emotion)));
+}
+
+export function renameCustomEmotion(oldName: string, newName: string): void {
+  const list = getCustomEmotions();
+  const idx = list.indexOf(oldName);
+  if (idx >= 0) { list[idx] = newName; localStorage.setItem(CUSTOM_EMOTIONS_KEY, JSON.stringify(list)); }
 }

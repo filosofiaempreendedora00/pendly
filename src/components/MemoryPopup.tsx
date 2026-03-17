@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, Square, ChevronDown, ChevronUp, Check, Plus, Sparkles } from 'lucide-react';
+import { X, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, Square, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import {
   PendulumEntry, getBobColor, getStatusLevel,
   PERIOD_CONFIG, DayPeriod,
-  CONTEXTUAL_EMOTIONS, ORDERED_UNIVERSAL_EMOTIONS,
+  CONTEXTUAL_EMOTIONS, ORDERED_UNIVERSAL_EMOTIONS, getCustomEmotions, ALL_STANDARD_EMOTIONS,
 } from '@/lib/pendulum';
 import { generateInsight } from '@/lib/insights';
-
-const CUSTOM_COLOR = '#a020f0';
+import { CustomEmotionPicker, CUSTOM_COLOR } from './CustomEmotionPicker';
 
 // ─── Lerp ────────────────────────────────────────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -162,6 +161,8 @@ interface MemoryPopupProps {
 // ─── MemoryPopup ─────────────────────────────────────────────────────────────
 const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => {
   const color       = getBobColor(entry.position);
+  const colorA = (a: number) =>
+    color.startsWith('hsl(') ? color.replace('hsl(', 'hsla(').replace(')', `, ${a})`) : color;
   const moodLabel   = getMoodLabel(entry.position);
   const dateLabel   = formatEntryDate(entry);
   const timeLabel   = formatEntryTime(entry);
@@ -177,12 +178,6 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
   const [editAudio,     setEditAudio]     = useState<string | undefined>(entry.audio);
   const [showMore,      setShowMore]      = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [customEmotions,   setCustomEmotions]   = useState<string[]>(() => {
-    const known = new Set([...CONTEXTUAL_EMOTIONS[statusLevel], ...ORDERED_UNIVERSAL_EMOTIONS[statusLevel]]);
-    return (entry.emotions ?? []).filter(e => !known.has(e));
-  });
-  const [customInput,      setCustomInput]      = useState('');
-  const [showCustomInput,  setShowCustomInput]  = useState(false);
 
   // ── Audio recording ────────────────────────────────────────────────────────
   const [isRecording,  setIsRecording]  = useState(false);
@@ -199,6 +194,7 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
     [contextualEmotions, statusLevel],
   );
   const isMaxed = editEmotions.length >= 3;
+  const customCount = getCustomEmotions().length;
 
   // ── Insight ────────────────────────────────────────────────────────────────
   const { line1, line2 } = generateInsight({
@@ -215,6 +211,13 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
     );
   };
 
+  const handleReplaceEmotion = (oldE: string, newE: string) => {
+    setEditEmotions(prev => {
+      const without = prev.filter(e => e !== oldE);
+      return without.length < 3 ? [...without, newE] : without;
+    });
+  };
+
   const handleSaveField = (field: typeof editField) => {
     if (field === 'emotions') onSave({ emotions: editEmotions });
     if (field === 'note')     onSave({ note: editNote.trim() || undefined });
@@ -224,28 +227,11 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
   };
 
   const handleCancelField = (field: typeof editField) => {
-    if (field === 'emotions') {
-      setEditEmotions(entry.emotions ?? []);
-      const known = new Set([...CONTEXTUAL_EMOTIONS[statusLevel], ...ORDERED_UNIVERSAL_EMOTIONS[statusLevel]]);
-      setCustomEmotions((entry.emotions ?? []).filter(e => !known.has(e)));
-      setCustomInput('');
-      setShowCustomInput(false);
-    }
-    if (field === 'note')  setEditNote(entry.note ?? '');
-    if (field === 'photo') setEditPhoto(entry.photo);
-    if (field === 'audio') { setEditAudio(entry.audio); stopRecording(); }
+    if (field === 'emotions') setEditEmotions(entry.emotions ?? []);
+    if (field === 'note')     setEditNote(entry.note ?? '');
+    if (field === 'photo')    setEditPhoto(entry.photo);
+    if (field === 'audio')    { setEditAudio(entry.audio); stopRecording(); }
     setEditField(null);
-  };
-
-  const addCustomEmotion = () => {
-    const val = customInput.trim().toLowerCase();
-    if (!val) return;
-    if (!customEmotions.includes(val) && !contextualEmotions.includes(val) && !universalFiltered.includes(val)) {
-      setCustomEmotions(prev => [...prev, val]);
-      setEditEmotions(prev => prev.length < 3 ? [...prev, val] : prev);
-    }
-    setCustomInput('');
-    setShowCustomInput(false);
   };
 
   const toggleField = (field: NonNullable<typeof editField>) => {
@@ -310,26 +296,6 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
               : 'bg-muted text-foreground/75 active:scale-[0.96]',
         ].join(' ')}
         style={active ? { backgroundColor: color, boxShadow: `0 2px 10px ${color}45` } : undefined}
-      >
-        {emotion}
-      </button>
-    );
-  };
-
-  const CustomEmotionChip = ({ emotion }: { emotion: string }) => {
-    const active   = editEmotions.includes(emotion);
-    const disabled = isMaxed && !active;
-    return (
-      <button
-        onClick={() => { if (!disabled) toggleEmotion(emotion); }}
-        className={[
-          'px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-150 select-none border',
-          active ? 'text-white' : disabled ? 'opacity-30' : 'active:scale-[0.96]',
-        ].join(' ')}
-        style={active
-          ? { backgroundColor: CUSTOM_COLOR, borderColor: CUSTOM_COLOR, boxShadow: `0 2px 14px ${CUSTOM_COLOR}50` }
-          : { backgroundColor: `${CUSTOM_COLOR}15`, color: CUSTOM_COLOR, borderColor: `${CUSTOM_COLOR}38` }
-        }
       >
         {emotion}
       </button>
@@ -446,84 +412,68 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
 
             {editField === 'emotions' ? (
               <>
+                {/* Selected tags preview */}
                 {editEmotions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    {editEmotions.map(e => (
-                      <span
-                        key={e}
-                        className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none border"
-                        style={{ backgroundColor: `${color}22`, color, borderColor: `${color}44` }}
-                      >
-                        {e}
-                      </span>
-                    ))}
-                    <span className="text-[10px] text-muted-foreground/40 self-center">
-                      {editEmotions.length}/3
-                    </span>
+                    {editEmotions.map(e => {
+                      const isCustom = !ALL_STANDARD_EMOTIONS.has(e);
+                      return (
+                        <span
+                          key={e}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none"
+                          style={isCustom
+                            ? { backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
+                            : { backgroundColor: colorA(0.13), color, boxShadow: `0 0 0 1px ${colorA(0.27)}` }
+                          }
+                        >
+                          {e}
+                        </span>
+                      );
+                    })}
+                    <span className="text-[10px] text-muted-foreground/40 self-center">{editEmotions.length}/3</span>
                   </div>
                 )}
-                {/* Custom chips first */}
-                {customEmotions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {customEmotions.map(e => <CustomEmotionChip key={e} emotion={e} />)}
-                  </div>
-                )}
+
+                {/* Contextual chips */}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {contextualEmotions.map(e => <EmotionChip key={e} emotion={e} />)}
                 </div>
 
-                {/* Create custom emotion */}
-                {!isMaxed && (
-                  showCustomInput ? (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex-1 flex items-center gap-2 h-8 rounded-full border px-3"
-                        style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: `${CUSTOM_COLOR}08` }}>
-                        <Sparkles size={11} style={{ color: CUSTOM_COLOR, flexShrink: 0 }} />
-                        <input
-                          autoFocus
-                          value={customInput}
-                          onChange={e => setCustomInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') addCustomEmotion(); if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput(''); } }}
-                          placeholder="Nome da emoção..."
-                          className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
-                        />
-                        <button onClick={() => { setShowCustomInput(false); setCustomInput(''); }}
-                          className="text-muted-foreground/30 hover:text-muted-foreground/60">
-                          <X size={11} />
-                        </button>
-                      </div>
-                      <button
-                        onClick={addCustomEmotion}
-                        disabled={!customInput.trim()}
-                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
-                        style={{ backgroundColor: CUSTOM_COLOR }}
-                      >
-                        <Plus size={13} className="text-white" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowCustomInput(true)}
-                      className="flex items-center gap-1.5 mb-3 text-[12px] font-medium transition-colors"
-                      style={{ color: `${CUSTOM_COLOR}cc` }}
-                    >
-                      <Sparkles size={11} />
-                      Criar emoção personalizada
-                    </button>
-                  )
-                )}
-
+                {/* Ver mais */}
                 <button
                   onClick={() => setShowMore(v => !v)}
                   className="flex items-center gap-1 text-[12px] text-muted-foreground/45 hover:text-muted-foreground/65 transition-colors mb-2"
                 >
                   {showMore ? <><ChevronUp size={12} /> Ver menos</> : <><ChevronDown size={12} /> + Ver mais emoções</>}
+                  {!showMore && customCount > 0 && (
+                    <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR }}>
+                      ✦ {customCount}
+                    </span>
+                  )}
                 </button>
                 {showMore && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {universalFiltered.map(e => <EmotionChip key={e} emotion={e} />)}
+                  <div className="flex flex-col gap-3 mb-3">
+                    <CustomEmotionPicker
+                      selected={editEmotions}
+                      onToggle={toggleEmotion}
+                      onReplaceSelection={handleReplaceEmotion}
+                      isMaxed={isMaxed}
+                      size="sm"
+                    />
+                    {universalFiltered.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">
+                          Complementares
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {universalFiltered.map(e => <EmotionChip key={e} emotion={e} />)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
+
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={() => handleCancelField('emotions')}
@@ -542,14 +492,21 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {(entry.emotions?.length ?? 0) > 0
-                  ? entry.emotions!.map(emotion => (
-                      <span
-                        key={emotion}
-                        className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none bg-primary/15 text-primary border border-primary/20"
-                      >
-                        {emotion}
-                      </span>
-                    ))
+                  ? entry.emotions!.map(emotion => {
+                      const isCustom = !ALL_STANDARD_EMOTIONS.has(emotion);
+                      return (
+                        <span
+                          key={emotion}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none"
+                          style={isCustom
+                            ? { backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
+                            : { backgroundColor: colorA(0.13), color, boxShadow: `0 0 0 1px ${colorA(0.27)}` }
+                          }
+                        >
+                          {emotion}
+                        </span>
+                      );
+                    })
                   : <span className="text-[12px] text-muted-foreground/35 italic">Nenhuma emoção registrada</span>
                 }
               </div>
