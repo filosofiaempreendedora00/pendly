@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,30 +12,36 @@ import BibliotecaPage from "./pages/BibliotecaPage";
 import PremiumPage from "./pages/PremiumPage";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
+import { IntroScreen } from "./components/IntroScreen";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="max-w-md mx-auto min-h-screen relative">
-          <Routes>
-            <Route path="/" element={<PenduloPage />} />
-            <Route path="/equilibrio" element={<EquilibrioPage />} />
-            <Route path="/biblioteca" element={<BibliotecaPage />} />
-            <Route path="/padroes" element={<PadroesPage />} />
-            <Route path="/cabide" element={<CabidePage />} />
-            <Route path="/premium" element={<PremiumPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNav />
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [showIntro, setShowIntro] = useState(true);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <div className="max-w-md mx-auto min-h-screen relative">
+            <Routes>
+              <Route path="/" element={<PenduloPage />} />
+              <Route path="/equilibrio" element={<EquilibrioPage />} />
+              <Route path="/biblioteca" element={<BibliotecaPage />} />
+              <Route path="/padroes" element={<PadroesPage />} />
+              <Route path="/cabide" element={<CabidePage />} />
+              <Route path="/premium" element={<PremiumPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <BottomNav />
+          </div>
+        </BrowserRouter>
+        {showIntro && <IntroScreen onComplete={() => setShowIntro(false)} />}
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

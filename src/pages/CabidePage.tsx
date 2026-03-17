@@ -6,6 +6,7 @@ import NaoSeiFlow from '@/components/NaoSeiFlow';
 import { saveEntry, getEntries, getTodayKey, getCurrentPeriod, PERIOD_CONFIG, DayPeriod } from '@/lib/pendulum';
 import { Button } from '@/components/ui/button';
 import { Sunrise, Sun, Moon } from 'lucide-react';
+import { IntroScreen } from '@/components/IntroScreen';
 
 const PERIOD_ICONS: Record<DayPeriod, React.ReactNode> = {
   morning: <Sunrise size={16} />,
@@ -317,6 +318,11 @@ type Cabide = {
 
 const cabides: Cabide[] = [
   {
+    label: 'Intro',
+    description: 'Animação de abertura — pêndulo azul e frases de respiro',
+    action: 'inline',
+  },
+  {
     label: 'Pêndulo v1',
     description: 'Interface original do pêndulo',
     action: 'inline',
@@ -343,6 +349,10 @@ const cabides: Cabide[] = [
 const CabidePage = () => {
   const navigate = useNavigate();
   const [active, setActive] = useState<string | null>(null);
+
+  if (active === 'Intro') {
+    return <IntroScreen onComplete={() => setActive(null)} />;
+  }
 
   if (active === 'Pêndulo v1') {
     return <PenduloV1 onBack={() => setActive(null)} />;
