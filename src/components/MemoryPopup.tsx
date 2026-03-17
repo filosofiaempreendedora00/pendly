@@ -6,7 +6,7 @@ import {
   CONTEXTUAL_EMOTIONS, ORDERED_UNIVERSAL_EMOTIONS, getCustomEmotions, ALL_STANDARD_EMOTIONS,
 } from '@/lib/pendulum';
 import { generateInsight } from '@/lib/insights';
-import { CustomEmotionPicker, CUSTOM_COLOR } from './CustomEmotionPicker';
+import { CustomEmotionPicker, CUSTOM_GRADIENT_TEXT } from './CustomEmotionPicker';
 
 // ─── Lerp ────────────────────────────────────────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -422,11 +422,11 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                           key={e}
                           className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none"
                           style={isCustom
-                            ? { backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
+                            ? { backgroundColor: 'rgba(155,48,245,0.07)', boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }
                             : { backgroundColor: colorA(0.13), color, boxShadow: `0 0 0 1px ${colorA(0.27)}` }
                           }
                         >
-                          {e}
+                          {isCustom ? <span style={CUSTOM_GRADIENT_TEXT}>{e}</span> : e}
                         </span>
                       );
                     })}
@@ -447,7 +447,7 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                   {showMore ? <><ChevronUp size={12} /> Ver menos</> : <><ChevronDown size={12} /> + Ver mais emoções</>}
                   {!showMore && customCount > 0 && (
                     <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR }}>
+                      style={{ ...CUSTOM_GRADIENT_TEXT, boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }}>
                       ✦ {customCount}
                     </span>
                   )}
@@ -499,11 +499,11 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                           key={emotion}
                           className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none"
                           style={isCustom
-                            ? { backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
+                            ? { backgroundColor: 'rgba(155,48,245,0.07)', boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }
                             : { backgroundColor: colorA(0.13), color, boxShadow: `0 0 0 1px ${colorA(0.27)}` }
                           }
                         >
-                          {emotion}
+                          {isCustom ? <span style={CUSTOM_GRADIENT_TEXT}>{emotion}</span> : emotion}
                         </span>
                       );
                     })

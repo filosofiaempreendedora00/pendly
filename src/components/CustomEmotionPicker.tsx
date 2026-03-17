@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Plus, Sparkles, Pencil, Trash2, Check, X, Settings2 } from 'lucide-react';
 import { getCustomEmotions, saveCustomEmotion, deleteCustomEmotion, renameCustomEmotion } from '@/lib/pendulum';
 
-export const CUSTOM_COLOR = '#a020f0';
+export const CUSTOM_COLOR    = '#9b30f5';
+export const CUSTOM_GRADIENT = 'linear-gradient(90deg, #9b30f5, #5b8ef0, #00d4a0)';
+export const CUSTOM_GRADIENT_TEXT = {
+  background: CUSTOM_GRADIENT,
+  WebkitBackgroundClip: 'text' as const,
+  WebkitTextFillColor: 'transparent' as const,
+  backgroundClip: 'text' as const,
+};
 
 // ─── ManageEmotionsSheet ──────────────────────────────────────────────────────
 const ManageEmotionsSheet = ({
@@ -23,7 +30,6 @@ const ManageEmotionsSheet = ({
 
   const refresh = () => { setEmotions(getCustomEmotions()); onChanged(); };
 
-  // ── Add ──────────────────────────────────────────────────────────────────
   const handleAdd = () => {
     const val = newInput.trim().toLowerCase();
     if (!val || emotions.includes(val)) return;
@@ -33,7 +39,6 @@ const ManageEmotionsSheet = ({
     setShowNewInput(false);
   };
 
-  // ── Edit ─────────────────────────────────────────────────────────────────
   const startEdit = (emotion: string) => {
     setConfirmDelete(null);
     setEditingEmotion(emotion);
@@ -51,7 +56,6 @@ const ManageEmotionsSheet = ({
     setEditingEmotion(null);
   };
 
-  // ── Delete ───────────────────────────────────────────────────────────────
   const handleDelete = (emotion: string) => {
     deleteCustomEmotion(emotion);
     refresh();
@@ -60,22 +64,18 @@ const ManageEmotionsSheet = ({
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
 
-      {/* Sheet */}
       <div className="relative w-full bg-background rounded-t-3xl shadow-2xl flex flex-col max-h-[82dvh]">
 
-        {/* Handle */}
         <div className="flex justify-center pt-3 shrink-0">
           <div className="w-10 h-[3px] rounded-full bg-muted-foreground/20" />
         </div>
 
-        {/* Header */}
         <div className="px-6 pt-4 pb-3 shrink-0 flex items-start justify-between">
           <div>
-            <h2 className="text-[17px] font-semibold text-foreground leading-snug">
-              Emoções personalizadas
+            <h2 className="text-[17px] font-semibold leading-snug">
+              <span style={CUSTOM_GRADIENT_TEXT}>Emoções personalizadas</span>
             </h2>
             <p className="text-[13px] text-muted-foreground/55 mt-0.5">
               Edite ou exclua suas emoções criadas
@@ -91,7 +91,6 @@ const ManageEmotionsSheet = ({
 
         <div className="mx-6 border-t border-border/30 shrink-0" />
 
-        {/* Content */}
         <div
           className="flex-1 overflow-y-auto px-6 pt-3"
           style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
@@ -107,7 +106,6 @@ const ManageEmotionsSheet = ({
               {emotions.map(emotion => (
                 <div key={emotion}>
                   {editingEmotion === emotion ? (
-                    /* Edit row */
                     <div className="flex items-center gap-2 py-2">
                       <input
                         autoFocus
@@ -123,7 +121,7 @@ const ManageEmotionsSheet = ({
                       <button
                         onClick={handleSaveEdit}
                         className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: CUSTOM_COLOR }}
+                        style={{ background: CUSTOM_GRADIENT }}
                       >
                         <Check size={15} className="text-white" />
                       </button>
@@ -135,13 +133,12 @@ const ManageEmotionsSheet = ({
                       </button>
                     </div>
                   ) : (
-                    /* Normal row */
                     <div className="flex items-center gap-2 py-1.5">
                       <span
                         className="flex-1 px-3.5 py-2.5 rounded-xl text-[14px] font-medium"
-                        style={{ backgroundColor: `${CUSTOM_COLOR}10`, color: CUSTOM_COLOR }}
+                        style={{ backgroundColor: 'rgba(155,48,245,0.07)' }}
                       >
-                        {emotion}
+                        <span style={CUSTOM_GRADIENT_TEXT}>{emotion}</span>
                       </span>
                       <button
                         onClick={() => startEdit(emotion)}
@@ -161,7 +158,6 @@ const ManageEmotionsSheet = ({
                     </div>
                   )}
 
-                  {/* Delete confirmation */}
                   {confirmDelete === emotion && (
                     <div className="rounded-2xl border border-red-100 bg-red-50/70 px-3.5 py-3 flex flex-col gap-2.5 mb-2">
                       <div>
@@ -175,10 +171,10 @@ const ManageEmotionsSheet = ({
                       <div className="flex gap-2">
                         <button
                           onClick={() => { startEdit(emotion); setConfirmDelete(null); }}
-                          className="flex-1 h-9 rounded-xl text-[12px] font-semibold transition-colors"
-                          style={{ backgroundColor: `${CUSTOM_COLOR}15`, color: CUSTOM_COLOR }}
+                          className="flex-1 h-9 rounded-xl text-[12px] font-semibold"
+                          style={{ backgroundColor: 'rgba(155,48,245,0.10)' }}
                         >
-                          Editar nome
+                          <span style={CUSTOM_GRADIENT_TEXT}>Editar nome</span>
                         </button>
                         <button
                           onClick={() => handleDelete(emotion)}
@@ -194,12 +190,11 @@ const ManageEmotionsSheet = ({
             </div>
           )}
 
-          {/* Add new */}
           {showNewInput ? (
             <div className="flex items-center gap-2 mb-2">
               <div
                 className="flex-1 flex items-center gap-2 h-11 rounded-xl border px-3"
-                style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: `${CUSTOM_COLOR}08` }}
+                style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: 'rgba(155,48,245,0.05)' }}
               >
                 <Sparkles size={13} style={{ color: CUSTOM_COLOR, flexShrink: 0 }} />
                 <input
@@ -224,7 +219,7 @@ const ManageEmotionsSheet = ({
                 onClick={handleAdd}
                 disabled={!newInput.trim()}
                 className="w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 shrink-0"
-                style={{ backgroundColor: CUSTOM_COLOR }}
+                style={{ background: CUSTOM_GRADIENT }}
               >
                 <Plus size={16} className="text-white" />
               </button>
@@ -232,11 +227,10 @@ const ManageEmotionsSheet = ({
           ) : (
             <button
               onClick={() => setShowNewInput(true)}
-              className="flex items-center gap-2 text-[13px] font-medium transition-colors"
-              style={{ color: `${CUSTOM_COLOR}bb` }}
+              className="flex items-center gap-2 text-[13px] font-medium"
             >
-              <Sparkles size={13} />
-              Adicionar emoção
+              <Sparkles size={13} style={{ color: CUSTOM_COLOR }} />
+              <span style={CUSTOM_GRADIENT_TEXT}>Adicionar emoção</span>
             </button>
           )}
         </div>
@@ -276,17 +270,15 @@ export function CustomEmotionPicker({ selected, onToggle, onReplaceSelection, is
     setShowNewInput(false);
   };
 
-  // Empty state — no custom emotions yet
   if (emotions.length === 0 && !showNewInput) {
     if (isMaxed) return null;
     return (
       <button
         onClick={() => setShowNewInput(true)}
-        className="flex items-center gap-1.5 text-[13px] font-medium transition-colors"
-        style={{ color: `${CUSTOM_COLOR}cc` }}
+        className="flex items-center gap-1.5 text-[13px] font-medium"
       >
-        <Sparkles size={12} />
-        Criar emoção personalizada
+        <Sparkles size={12} style={{ color: CUSTOM_COLOR }} />
+        <span style={CUSTOM_GRADIENT_TEXT}>Criar emoção personalizada</span>
       </button>
     );
   }
@@ -295,11 +287,10 @@ export function CustomEmotionPicker({ selected, onToggle, onReplaceSelection, is
     <>
       <div className="flex flex-col gap-2.5">
 
-        {/* Chips — selectable only, no edit/delete icons */}
         {emotions.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: `${CUSTOM_COLOR}88` }}>
-              ✦ Personalizadas
+            <span className="text-[10px] font-semibold uppercase tracking-wider">
+              <span style={CUSTOM_GRADIENT_TEXT}>✦ Personalizadas</span>
             </span>
             <div className="flex flex-wrap gap-x-2 gap-y-2">
               {emotions.map(emotion => {
@@ -311,11 +302,14 @@ export function CustomEmotionPicker({ selected, onToggle, onReplaceSelection, is
                     onClick={() => { if (!disabled) onToggle(emotion); }}
                     className={[chipCls, active ? 'text-white' : disabled ? 'opacity-30' : 'active:scale-[0.96]'].join(' ')}
                     style={active
-                      ? { backgroundColor: CUSTOM_COLOR, boxShadow: `0 2px 14px ${CUSTOM_COLOR}50` }
-                      : { backgroundColor: `${CUSTOM_COLOR}14`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
+                      ? { background: CUSTOM_GRADIENT, boxShadow: `0 2px 14px rgba(155,48,245,0.35)` }
+                      : { backgroundColor: 'rgba(155,48,245,0.07)', boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }
                     }
                   >
-                    {emotion}
+                    {active
+                      ? emotion
+                      : <span style={CUSTOM_GRADIENT_TEXT}>{emotion}</span>
+                    }
                   </button>
                 );
               })}
@@ -323,14 +317,13 @@ export function CustomEmotionPicker({ selected, onToggle, onReplaceSelection, is
           </div>
         )}
 
-        {/* Footer row: Criar outra · Gerenciar */}
         <div className="flex items-center gap-2.5">
           {!isMaxed && (
             showNewInput ? (
               <div className="flex items-center gap-2 flex-1">
                 <div
                   className="flex-1 flex items-center gap-2 h-9 rounded-full border px-3"
-                  style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: `${CUSTOM_COLOR}08` }}
+                  style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: 'rgba(155,48,245,0.05)' }}
                 >
                   <Sparkles size={11} style={{ color: CUSTOM_COLOR, flexShrink: 0 }} />
                   <input
@@ -355,7 +348,7 @@ export function CustomEmotionPicker({ selected, onToggle, onReplaceSelection, is
                   onClick={handleAdd}
                   disabled={!newInput.trim()}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-30 shrink-0"
-                  style={{ backgroundColor: CUSTOM_COLOR }}
+                  style={{ background: CUSTOM_GRADIENT }}
                 >
                   <Plus size={14} className="text-white" />
                 </button>
@@ -363,33 +356,31 @@ export function CustomEmotionPicker({ selected, onToggle, onReplaceSelection, is
             ) : (
               <button
                 onClick={() => setShowNewInput(true)}
-                className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-                style={{ color: `${CUSTOM_COLOR}aa` }}
+                className="flex items-center gap-1.5 text-[12px] font-medium"
               >
-                <Sparkles size={11} />
-                {emotions.length > 0 ? 'Criar outra' : 'Criar emoção personalizada'}
+                <Sparkles size={11} style={{ color: CUSTOM_COLOR }} />
+                <span style={CUSTOM_GRADIENT_TEXT}>
+                  {emotions.length > 0 ? 'Criar outra' : 'Criar emoção personalizada'}
+                </span>
               </button>
             )
           )}
 
-          {/* Separator + Gerenciar */}
           {emotions.length > 0 && !showNewInput && (
             <>
               {!isMaxed && <span className="text-muted-foreground/20 text-[11px] select-none">·</span>}
               <button
                 onClick={() => setShowManage(true)}
-                className="flex items-center gap-1 text-[12px] font-medium transition-colors"
-                style={{ color: `${CUSTOM_COLOR}66` }}
+                className="flex items-center gap-1 text-[12px] font-medium"
               >
-                <Settings2 size={11} />
-                Gerenciar
+                <Settings2 size={11} style={{ color: CUSTOM_COLOR }} />
+                <span style={CUSTOM_GRADIENT_TEXT}>Gerenciar</span>
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Management bottom sheet */}
       {showManage && (
         <ManageEmotionsSheet
           onClose={() => { setShowManage(false); refresh(); }}

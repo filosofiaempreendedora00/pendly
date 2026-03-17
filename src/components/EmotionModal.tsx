@@ -7,7 +7,7 @@ import {
   type StatusLevel,
 } from '@/lib/pendulum';
 import { ChevronDown, ChevronUp, ArrowLeft, Mic, MicOff, ImagePlus, X } from 'lucide-react';
-import { CustomEmotionPicker, CUSTOM_COLOR } from './CustomEmotionPicker';
+import { CustomEmotionPicker, CUSTOM_GRADIENT_TEXT } from './CustomEmotionPicker';
 
 interface EmotionModalProps {
   isOpen: boolean;
@@ -224,7 +224,7 @@ const EmotionModal = ({
                 }
                 {!showMore && customCount > 0 && (
                   <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                    style={{ backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR }}>
+                    style={{ ...CUSTOM_GRADIENT_TEXT, boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }}>
                     ✦ {customCount}
                   </span>
                 )}
