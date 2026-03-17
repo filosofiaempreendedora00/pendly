@@ -4,8 +4,9 @@ import {
   getEntries, deleteEntryFlex, updateEntry,
   PendulumEntry, getTodayKey, getLocalDateKey, PERIOD_CONFIG, DayPeriod,
   getTodayEntryCount, DAILY_FREE_LIMIT, getBobColor,
+  getStatusLevel, CONTEXTUAL_EMOTIONS, ORDERED_UNIVERSAL_EMOTIONS,
 } from '@/lib/pendulum';
-import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import PaywallPopup from '@/components/PaywallPopup';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
@@ -170,14 +171,31 @@ const EntryInline = ({
   onRequestDelete: (entry: PendulumEntry) => void;
   onEdited: () => void;
 }) => {
-  const [expanded, setExpanded]       = useState(false);
-  const [menuOpen, setMenuOpen]       = useState(false);
-  const [editMode, setEditMode]       = useState(false);
-  const [noteValue, setNoteValue]     = useState(entry.note ?? '');
-  const [photoValue, setPhotoValue]   = useState<string | undefined>(entry.photo);
-  const [audioValue, setAudioValue]   = useState<string | undefined>(entry.audio);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recDuration, setRecDuration] = useState(0);
+  const [expanded, setExpanded]             = useState(false);
+  const [menuOpen, setMenuOpen]             = useState(false);
+  const [editMode, setEditMode]             = useState(false);
+  const [noteValue, setNoteValue]           = useState(entry.note ?? '');
+  const [photoValue, setPhotoValue]         = useState<string | undefined>(entry.photo);
+  const [audioValue, setAudioValue]         = useState<string | undefined>(entry.audio);
+  const [emotionsValue, setEmotionsValue]   = useState<string[]>(entry.emotions ?? []);
+  const [showMoreEmotions, setShowMoreEmotions] = useState(false);
+  const [isRecording, setIsRecording]       = useState(false);
+  const [recDuration, setRecDuration]       = useState(0);
+
+  const statusLevel         = getStatusLevel(entry.position);
+  const contextualEmotions  = CONTEXTUAL_EMOTIONS[statusLevel];
+  const universalFiltered   = ORDERED_UNIVERSAL_EMOTIONS[statusLevel].filter(e => !contextualEmotions.includes(e));
+  const entryColor          = getBobColor(entry.position);
+  const entryColorA = (a: number) =>
+    entryColor.startsWith('hsl(')
+      ? entryColor.replace('hsl(', 'hsla(').replace(')', `, ${a})`)
+      : entryColor;
+
+  const toggleEmotion = (e: string) => {
+    setEmotionsValue(prev =>
+      prev.includes(e) ? prev.filter(x => x !== e) : prev.length < 3 ? [...prev, e] : prev
+    );
+  };
 
   const photoInputRef    = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -185,7 +203,7 @@ const EntryInline = ({
   const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleSave = () => {
-    if (entry.timestamp) updateEntry(entry.timestamp, { note: noteValue, photo: photoValue, audio: audioValue });
+    if (entry.timestamp) updateEntry(entry.timestamp, { note: noteValue, photo: photoValue, audio: audioValue, emotions: emotionsValue });
     setEditMode(false);
     setMenuOpen(false);
     onEdited();
@@ -195,6 +213,8 @@ const EntryInline = ({
     setNoteValue(entry.note ?? '');
     setPhotoValue(entry.photo);
     setAudioValue(entry.audio);
+    setEmotionsValue(entry.emotions ?? []);
+    setShowMoreEmotions(false);
     setEditMode(false);
     setMenuOpen(false);
     if (isRecording) stopRecording();
@@ -338,6 +358,92 @@ const EntryInline = ({
       {/* Modo edição */}
       {editMode && (
         <div className="mt-3 ml-[3.5rem] entry-menu-in flex flex-col gap-3">
+
+          {/* Emoções */}
+          <div className="rounded-xl bg-muted/40 border border-border/40 px-3 py-2.5 flex flex-col gap-2">
+            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
+              🫀 Emoções
+            </span>
+
+            {/* Selecionadas — estilo tag translúcida, separado visualmente do picker */}
+            {emotionsValue.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pb-1 border-b border-border/20">
+                {emotionsValue.map(e => (
+                  <span
+                    key={e}
+                    className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none border"
+                    style={{
+                      backgroundColor: entryColorA(0.13),
+                      color: entryColor,
+                      borderColor: entryColorA(0.27),
+                    }}
+                  >
+                    {e}
+                  </span>
+                ))}
+                <span className="text-[10px] text-muted-foreground/35 self-center">
+                  {emotionsValue.length}/3
+                </span>
+              </div>
+            )}
+
+            {/* Picker contextual — chips maiores, active = solid */}
+            <div className="flex flex-wrap gap-2">
+              {contextualEmotions.map(e => {
+                const active   = emotionsValue.includes(e);
+                const disabled = emotionsValue.length >= 3 && !active;
+                return (
+                  <button
+                    key={e}
+                    onClick={() => { if (!disabled) toggleEmotion(e); }}
+                    className={[
+                      'px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-150 select-none',
+                      active   ? 'text-white shadow-sm' :
+                      disabled ? 'bg-muted/40 text-muted-foreground/25' :
+                                 'bg-muted text-foreground/75 active:scale-[0.96]',
+                    ].join(' ')}
+                    style={active ? { backgroundColor: entryColor, boxShadow: `0 2px 10px ${entryColor}45` } : undefined}
+                  >
+                    {e}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Ver mais */}
+            <button
+              onClick={() => setShowMoreEmotions(v => !v)}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors"
+            >
+              {showMoreEmotions
+                ? <><ChevronUp size={11} /> Ver menos</>
+                : <><ChevronDown size={11} /> + Ver mais emoções</>}
+            </button>
+
+            {showMoreEmotions && (
+              <div className="flex flex-wrap gap-2">
+                {universalFiltered.map(e => {
+                  const active   = emotionsValue.includes(e);
+                  const disabled = emotionsValue.length >= 3 && !active;
+                  return (
+                    <button
+                      key={e}
+                      onClick={() => { if (!disabled) toggleEmotion(e); }}
+                      className={[
+                        'px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-150 select-none',
+                        active   ? 'text-white shadow-sm' :
+                        disabled ? 'bg-muted/40 text-muted-foreground/25' :
+                                   'bg-muted text-foreground/75 active:scale-[0.96]',
+                      ].join(' ')}
+                      style={active ? { backgroundColor: entryColor, boxShadow: `0 2px 10px ${entryColor}45` } : undefined}
+                    >
+                      {e}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Nota */}
           <textarea
