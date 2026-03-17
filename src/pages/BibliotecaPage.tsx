@@ -445,13 +445,6 @@ const EntryInline = ({
 
             {showMoreEmotions && (
               <div className="flex flex-col gap-2.5">
-                <CustomEmotionPicker
-                  selected={emotionsValue}
-                  onToggle={toggleEmotion}
-                  onReplaceSelection={handleReplaceEmotion}
-                  isMaxed={emotionsValue.length >= 3}
-                  size="sm"
-                />
                 {universalFiltered.length > 0 && (
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">
@@ -480,6 +473,13 @@ const EntryInline = ({
                     </div>
                   </div>
                 )}
+                <CustomEmotionPicker
+                  selected={emotionsValue}
+                  onToggle={toggleEmotion}
+                  onReplaceSelection={handleReplaceEmotion}
+                  isMaxed={emotionsValue.length >= 3}
+                  size="sm"
+                />
               </div>
             )}
           </div>

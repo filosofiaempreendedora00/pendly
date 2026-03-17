@@ -232,16 +232,7 @@ const EmotionModal = ({
 
               {showMore && (
                 <div className="pb-5 flex flex-col gap-4">
-                  {/* Custom emotions first, with management */}
-                  <CustomEmotionPicker
-                    selected={selected}
-                    onToggle={toggle}
-                    onReplaceSelection={handleReplaceSelection}
-                    isMaxed={isMaxed}
-                    size="md"
-                  />
-
-                  {/* Default complementary */}
+                  {/* Default complementary first */}
                   {universalFiltered.length > 0 && (
                     <div className="flex flex-col gap-2">
                       <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">
@@ -252,6 +243,15 @@ const EmotionModal = ({
                       </div>
                     </div>
                   )}
+
+                  {/* Custom emotions below */}
+                  <CustomEmotionPicker
+                    selected={selected}
+                    onToggle={toggle}
+                    onReplaceSelection={handleReplaceSelection}
+                    isMaxed={isMaxed}
+                    size="md"
+                  />
                 </div>
               )}
 

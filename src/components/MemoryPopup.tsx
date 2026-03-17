@@ -454,13 +454,6 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                 </button>
                 {showMore && (
                   <div className="flex flex-col gap-3 mb-3">
-                    <CustomEmotionPicker
-                      selected={editEmotions}
-                      onToggle={toggleEmotion}
-                      onReplaceSelection={handleReplaceEmotion}
-                      isMaxed={isMaxed}
-                      size="sm"
-                    />
                     {universalFiltered.length > 0 && (
                       <div className="flex flex-col gap-2">
                         <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">
@@ -471,6 +464,13 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                         </div>
                       </div>
                     )}
+                    <CustomEmotionPicker
+                      selected={editEmotions}
+                      onToggle={toggleEmotion}
+                      onReplaceSelection={handleReplaceEmotion}
+                      isMaxed={isMaxed}
+                      size="sm"
+                    />
                   </div>
                 )}
 

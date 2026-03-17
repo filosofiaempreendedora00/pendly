@@ -5,13 +5,15 @@
       "name": "Pendly Dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 8080
+      "port": 8080,
+      "cwd": "/Users/roberto/Pendly/pendlymind-main"
     },
     {
       "name": "Pendly Preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview"],
-      "port": 4173
+      "port": 4173,
+      "cwd": "/Users/roberto/Pendly/pendlymind-main"
     }
   ]
 }
