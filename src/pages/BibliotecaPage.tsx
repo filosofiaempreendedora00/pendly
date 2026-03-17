@@ -8,7 +8,7 @@ import {
 } from '@/lib/pendulum';
 import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import PaywallPopup from '@/components/PaywallPopup';
-import { CustomEmotionPicker, CUSTOM_GRADIENT_TEXT } from '@/components/CustomEmotionPicker';
+import { CustomEmotionPicker, CUSTOM_COLOR } from '@/components/CustomEmotionPicker';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
 const MOODS = [
@@ -299,11 +299,11 @@ const EntryInline = ({
                     key={emotion}
                     className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none"
                     style={isCustom
-                      ? { backgroundColor: 'rgba(155,48,245,0.07)', boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }
+                      ? { backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
                       : { backgroundColor: entryColorA(0.13), color: entryColor, boxShadow: `0 0 0 1px ${entryColorA(0.27)}` }
                     }
                   >
-                    {isCustom ? <span style={CUSTOM_GRADIENT_TEXT}>{emotion}</span> : emotion}
+                    {emotion}
                   </span>
                 );
               })}
@@ -392,11 +392,11 @@ const EntryInline = ({
                       key={e}
                       className="px-2 py-0.5 rounded-md text-[10px] font-medium leading-none"
                       style={isCustom
-                        ? { backgroundColor: 'rgba(155,48,245,0.07)', boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }
+                        ? { backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR, boxShadow: `0 0 0 1px ${CUSTOM_COLOR}35` }
                         : { backgroundColor: entryColorA(0.13), color: entryColor, boxShadow: `0 0 0 1px ${entryColorA(0.27)}` }
                       }
                     >
-                      {isCustom ? <span style={CUSTOM_GRADIENT_TEXT}>{e}</span> : e}
+                      {e}
                     </span>
                   );
                 })}
@@ -437,7 +437,7 @@ const EntryInline = ({
                 : <><ChevronDown size={11} /> + Ver mais emoções</>}
               {!showMoreEmotions && customCount > 0 && (
                 <span className="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                  style={{ ...CUSTOM_GRADIENT_TEXT, boxShadow: '0 0 0 1px rgba(155,48,245,0.22)' }}>
+                  style={{ backgroundColor: `${CUSTOM_COLOR}18`, color: CUSTOM_COLOR }}>
                   ✦ {customCount}
                 </span>
               )}
