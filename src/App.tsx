@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import PenduloPage from "./pages/PenduloPage";
 import EquilibrioPage from "./pages/EquilibrioPage";
 import PadroesPage from "./pages/PadroesPage";
@@ -16,6 +16,12 @@ import { IntroScreen } from "./components/IntroScreen";
 
 const queryClient = new QueryClient();
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 const App = () => {
   const [showIntro, setShowIntro] = useState(true);
 
@@ -25,6 +31,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <div className="max-w-md mx-auto min-h-screen relative">
             <Routes>
               <Route path="/" element={<PenduloPage />} />
