@@ -6,8 +6,10 @@ import {
   getTodayEntryCount, DAILY_FREE_LIMIT, getBobColor,
   getStatusLevel, CONTEXTUAL_EMOTIONS, ORDERED_UNIVERSAL_EMOTIONS,
 } from '@/lib/pendulum';
-import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, X, Square, Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import PaywallPopup from '@/components/PaywallPopup';
+
+const CUSTOM_COLOR = '#a020f0';
 
 // ─── Mood labels ──────────────────────────────────────────────────────────────
 const MOODS = [
@@ -179,6 +181,12 @@ const EntryInline = ({
   const [audioValue, setAudioValue]         = useState<string | undefined>(entry.audio);
   const [emotionsValue, setEmotionsValue]   = useState<string[]>(entry.emotions ?? []);
   const [showMoreEmotions, setShowMoreEmotions] = useState(false);
+  const [customEmotions, setCustomEmotions] = useState<string[]>(() => {
+    const known = new Set([...CONTEXTUAL_EMOTIONS[getStatusLevel(entry.position)], ...ORDERED_UNIVERSAL_EMOTIONS[getStatusLevel(entry.position)]]);
+    return (entry.emotions ?? []).filter(e => !known.has(e));
+  });
+  const [customInput, setCustomInput]       = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [isRecording, setIsRecording]       = useState(false);
   const [recDuration, setRecDuration]       = useState(0);
 
@@ -215,9 +223,24 @@ const EntryInline = ({
     setAudioValue(entry.audio);
     setEmotionsValue(entry.emotions ?? []);
     setShowMoreEmotions(false);
+    const known = new Set([...contextualEmotions, ...universalFiltered]);
+    setCustomEmotions((entry.emotions ?? []).filter(e => !known.has(e)));
+    setCustomInput('');
+    setShowCustomInput(false);
     setEditMode(false);
     setMenuOpen(false);
     if (isRecording) stopRecording();
+  };
+
+  const addCustomEmotion = () => {
+    const val = customInput.trim().toLowerCase();
+    if (!val) return;
+    if (!customEmotions.includes(val) && !contextualEmotions.includes(val) && !universalFiltered.includes(val)) {
+      setCustomEmotions(prev => [...prev, val]);
+      setEmotionsValue(prev => prev.length < 3 ? [...prev, val] : prev);
+    }
+    setCustomInput('');
+    setShowCustomInput(false);
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -387,6 +410,32 @@ const EntryInline = ({
               </div>
             )}
 
+            {/* Custom chips — shown first */}
+            {customEmotions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {customEmotions.map(e => {
+                  const active   = emotionsValue.includes(e);
+                  const disabled = emotionsValue.length >= 3 && !active;
+                  return (
+                    <button
+                      key={e}
+                      onClick={() => { if (!disabled) toggleEmotion(e); }}
+                      className={[
+                        'px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-150 select-none border',
+                        active ? 'text-white' : disabled ? 'opacity-30' : 'active:scale-[0.96]',
+                      ].join(' ')}
+                      style={active
+                        ? { backgroundColor: CUSTOM_COLOR, borderColor: CUSTOM_COLOR, boxShadow: `0 2px 14px ${CUSTOM_COLOR}50` }
+                        : { backgroundColor: `${CUSTOM_COLOR}15`, color: CUSTOM_COLOR, borderColor: `${CUSTOM_COLOR}38` }
+                      }
+                    >
+                      {e}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Picker contextual — chips maiores, active = solid */}
             <div className="flex flex-wrap gap-2">
               {contextualEmotions.map(e => {
@@ -409,6 +458,47 @@ const EntryInline = ({
                 );
               })}
             </div>
+
+            {/* Create custom emotion */}
+            {emotionsValue.length < 3 && (
+              showCustomInput ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 h-8 rounded-full border px-3"
+                    style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: `${CUSTOM_COLOR}08` }}>
+                    <Sparkles size={11} style={{ color: CUSTOM_COLOR, flexShrink: 0 }} />
+                    <input
+                      autoFocus
+                      value={customInput}
+                      onChange={e => setCustomInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') addCustomEmotion(); if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput(''); } }}
+                      placeholder="Nome da emoção..."
+                      className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                    />
+                    <button onClick={() => { setShowCustomInput(false); setCustomInput(''); }}
+                      className="text-muted-foreground/30 hover:text-muted-foreground/60">
+                      <X size={11} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={addCustomEmotion}
+                    disabled={!customInput.trim()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                    style={{ backgroundColor: CUSTOM_COLOR }}
+                  >
+                    <Plus size={13} className="text-white" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowCustomInput(true)}
+                  className="flex items-center gap-1.5 text-[11px] font-medium transition-colors"
+                  style={{ color: `${CUSTOM_COLOR}cc` }}
+                >
+                  <Sparkles size={11} />
+                  Criar emoção personalizada
+                </button>
+              )
+            )}
 
             {/* Ver mais */}
             <button

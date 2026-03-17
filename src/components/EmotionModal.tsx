@@ -5,7 +5,7 @@ import {
   ORDERED_UNIVERSAL_EMOTIONS,
   type StatusLevel,
 } from '@/lib/pendulum';
-import { ChevronDown, ChevronUp, ArrowLeft, Mic, MicOff, ImagePlus, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeft, Mic, MicOff, ImagePlus, X, Plus, Sparkles } from 'lucide-react';
 
 interface EmotionModalProps {
   isOpen: boolean;
@@ -14,6 +14,8 @@ interface EmotionModalProps {
   statusLevel: StatusLevel;
   bobColor: string;
 }
+
+const CUSTOM_COLOR = '#a020f0';
 
 const EmotionModal = ({
   isOpen,
@@ -25,6 +27,9 @@ const EmotionModal = ({
   // ── Step 1 state ────────────────────────────────────────────────────────────
   const [selected, setSelected] = useState<string[]>([]);
   const [showMore, setShowMore] = useState(false);
+  const [customEmotions, setCustomEmotions] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
@@ -68,6 +73,20 @@ const EmotionModal = ({
     setIsRecording(false);
     setRecordingDuration(0);
     if (timerRef.current) clearInterval(timerRef.current);
+    setCustomEmotions([]);
+    setCustomInput('');
+    setShowCustomInput(false);
+  };
+
+  const addCustomEmotion = () => {
+    const val = customInput.trim().toLowerCase();
+    if (!val) return;
+    if (!customEmotions.includes(val) && !contextual.includes(val) && !universalFiltered.includes(val)) {
+      setCustomEmotions(prev => [...prev, val]);
+      toggle(val);
+    }
+    setCustomInput('');
+    setShowCustomInput(false);
   };
 
   const handleClose   = () => { resetAll(); onClose(); };
@@ -151,6 +170,26 @@ const EmotionModal = ({
     );
   };
 
+  const CustomChip = ({ emotion }: { emotion: string }) => {
+    const active   = selected.includes(emotion);
+    const disabled = isMaxed && !active;
+    return (
+      <button
+        onClick={() => { if (!disabled) toggle(emotion); }}
+        className={[
+          'px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 select-none border',
+          active ? 'text-white' : disabled ? 'opacity-30' : 'active:scale-[0.96]',
+        ].join(' ')}
+        style={active
+          ? { backgroundColor: CUSTOM_COLOR, borderColor: CUSTOM_COLOR, boxShadow: `0 2px 14px ${CUSTOM_COLOR}50` }
+          : { backgroundColor: `${CUSTOM_COLOR}15`, color: CUSTOM_COLOR, borderColor: `${CUSTOM_COLOR}38` }
+        }
+      >
+        {emotion}
+      </button>
+    );
+  };
+
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-[200] flex items-end">
@@ -198,9 +237,57 @@ const EmotionModal = ({
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 pb-1">
-              <div className="flex flex-wrap gap-2 pt-1 pb-5">
+              {/* Custom emotions — always shown first when any exist */}
+              {customEmotions.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1 pb-3">
+                  {customEmotions.map(e => <CustomChip key={e} emotion={e} />)}
+                </div>
+              )}
+
+              <div className={`flex flex-wrap gap-2 pb-4 ${customEmotions.length > 0 ? '' : 'pt-1'}`}>
                 {contextual.map(e => <Chip key={e} emotion={e} />)}
               </div>
+
+              {/* Create custom emotion */}
+              {!isMaxed && (
+                showCustomInput ? (
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex-1 flex items-center gap-2 h-9 rounded-full border px-3"
+                      style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: `${CUSTOM_COLOR}08` }}>
+                      <Sparkles size={12} style={{ color: CUSTOM_COLOR, flexShrink: 0 }} />
+                      <input
+                        autoFocus
+                        value={customInput}
+                        onChange={e => setCustomInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') addCustomEmotion(); if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput(''); } }}
+                        placeholder="Nome da emoção..."
+                        className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                      />
+                      <button onClick={() => { setShowCustomInput(false); setCustomInput(''); }}
+                        className="text-muted-foreground/30 hover:text-muted-foreground/60">
+                        <X size={12} />
+                      </button>
+                    </div>
+                    <button
+                      onClick={addCustomEmotion}
+                      disabled={!customInput.trim()}
+                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                      style={{ backgroundColor: CUSTOM_COLOR }}
+                    >
+                      <Plus size={14} className="text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowCustomInput(true)}
+                    className="flex items-center gap-1.5 mb-4 text-[13px] font-medium transition-colors"
+                    style={{ color: `${CUSTOM_COLOR}cc` }}
+                  >
+                    <Sparkles size={12} />
+                    Criar emoção personalizada
+                  </button>
+                )
+              )}
 
               <button
                 onClick={() => setShowMore(v => !v)}

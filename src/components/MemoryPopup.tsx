@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, Square, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { X, Pencil, Trash2, FileText, ImageIcon, Mic, Camera, Square, ChevronDown, ChevronUp, Check, Plus, Sparkles } from 'lucide-react';
 import {
   PendulumEntry, getBobColor, getStatusLevel,
   PERIOD_CONFIG, DayPeriod,
   CONTEXTUAL_EMOTIONS, ORDERED_UNIVERSAL_EMOTIONS,
 } from '@/lib/pendulum';
 import { generateInsight } from '@/lib/insights';
+
+const CUSTOM_COLOR = '#a020f0';
 
 // ─── Lerp ────────────────────────────────────────────────────────────────────
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -175,6 +177,12 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
   const [editAudio,     setEditAudio]     = useState<string | undefined>(entry.audio);
   const [showMore,      setShowMore]      = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [customEmotions,   setCustomEmotions]   = useState<string[]>(() => {
+    const known = new Set([...CONTEXTUAL_EMOTIONS[statusLevel], ...ORDERED_UNIVERSAL_EMOTIONS[statusLevel]]);
+    return (entry.emotions ?? []).filter(e => !known.has(e));
+  });
+  const [customInput,      setCustomInput]      = useState('');
+  const [showCustomInput,  setShowCustomInput]  = useState(false);
 
   // ── Audio recording ────────────────────────────────────────────────────────
   const [isRecording,  setIsRecording]  = useState(false);
@@ -216,11 +224,28 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
   };
 
   const handleCancelField = (field: typeof editField) => {
-    if (field === 'emotions') setEditEmotions(entry.emotions ?? []);
-    if (field === 'note')     setEditNote(entry.note ?? '');
-    if (field === 'photo')    setEditPhoto(entry.photo);
-    if (field === 'audio')    { setEditAudio(entry.audio); stopRecording(); }
+    if (field === 'emotions') {
+      setEditEmotions(entry.emotions ?? []);
+      const known = new Set([...CONTEXTUAL_EMOTIONS[statusLevel], ...ORDERED_UNIVERSAL_EMOTIONS[statusLevel]]);
+      setCustomEmotions((entry.emotions ?? []).filter(e => !known.has(e)));
+      setCustomInput('');
+      setShowCustomInput(false);
+    }
+    if (field === 'note')  setEditNote(entry.note ?? '');
+    if (field === 'photo') setEditPhoto(entry.photo);
+    if (field === 'audio') { setEditAudio(entry.audio); stopRecording(); }
     setEditField(null);
+  };
+
+  const addCustomEmotion = () => {
+    const val = customInput.trim().toLowerCase();
+    if (!val) return;
+    if (!customEmotions.includes(val) && !contextualEmotions.includes(val) && !universalFiltered.includes(val)) {
+      setCustomEmotions(prev => [...prev, val]);
+      setEditEmotions(prev => prev.length < 3 ? [...prev, val] : prev);
+    }
+    setCustomInput('');
+    setShowCustomInput(false);
   };
 
   const toggleField = (field: NonNullable<typeof editField>) => {
@@ -285,6 +310,26 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
               : 'bg-muted text-foreground/75 active:scale-[0.96]',
         ].join(' ')}
         style={active ? { backgroundColor: color, boxShadow: `0 2px 10px ${color}45` } : undefined}
+      >
+        {emotion}
+      </button>
+    );
+  };
+
+  const CustomEmotionChip = ({ emotion }: { emotion: string }) => {
+    const active   = editEmotions.includes(emotion);
+    const disabled = isMaxed && !active;
+    return (
+      <button
+        onClick={() => { if (!disabled) toggleEmotion(emotion); }}
+        className={[
+          'px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-150 select-none border',
+          active ? 'text-white' : disabled ? 'opacity-30' : 'active:scale-[0.96]',
+        ].join(' ')}
+        style={active
+          ? { backgroundColor: CUSTOM_COLOR, borderColor: CUSTOM_COLOR, boxShadow: `0 2px 14px ${CUSTOM_COLOR}50` }
+          : { backgroundColor: `${CUSTOM_COLOR}15`, color: CUSTOM_COLOR, borderColor: `${CUSTOM_COLOR}38` }
+        }
       >
         {emotion}
       </button>
@@ -417,9 +462,57 @@ const MemoryPopup = ({ entry, onClose, onSave, onDelete }: MemoryPopupProps) => 
                     </span>
                   </div>
                 )}
+                {/* Custom chips first */}
+                {customEmotions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {customEmotions.map(e => <CustomEmotionChip key={e} emotion={e} />)}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {contextualEmotions.map(e => <EmotionChip key={e} emotion={e} />)}
                 </div>
+
+                {/* Create custom emotion */}
+                {!isMaxed && (
+                  showCustomInput ? (
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex-1 flex items-center gap-2 h-8 rounded-full border px-3"
+                        style={{ borderColor: `${CUSTOM_COLOR}50`, backgroundColor: `${CUSTOM_COLOR}08` }}>
+                        <Sparkles size={11} style={{ color: CUSTOM_COLOR, flexShrink: 0 }} />
+                        <input
+                          autoFocus
+                          value={customInput}
+                          onChange={e => setCustomInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') addCustomEmotion(); if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput(''); } }}
+                          placeholder="Nome da emoção..."
+                          className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                        />
+                        <button onClick={() => { setShowCustomInput(false); setCustomInput(''); }}
+                          className="text-muted-foreground/30 hover:text-muted-foreground/60">
+                          <X size={11} />
+                        </button>
+                      </div>
+                      <button
+                        onClick={addCustomEmotion}
+                        disabled={!customInput.trim()}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                        style={{ backgroundColor: CUSTOM_COLOR }}
+                      >
+                        <Plus size={13} className="text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowCustomInput(true)}
+                      className="flex items-center gap-1.5 mb-3 text-[12px] font-medium transition-colors"
+                      style={{ color: `${CUSTOM_COLOR}cc` }}
+                    >
+                      <Sparkles size={11} />
+                      Criar emoção personalizada
+                    </button>
+                  )
+                )}
+
                 <button
                   onClick={() => setShowMore(v => !v)}
                   className="flex items-center gap-1 text-[12px] text-muted-foreground/45 hover:text-muted-foreground/65 transition-colors mb-2"
