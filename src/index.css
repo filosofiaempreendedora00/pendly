@@ -355,3 +355,29 @@
 .axis-dot-glow-dark {
   animation: axis-glow-dark 1.8s ease-in-out infinite;
 }
+
+/* ── Equilibre-se — celebration rings ──────────────────────────────────── */
+@keyframes ring-expand {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(5);   opacity: 0;   }
+}
+.celebration-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  animation: ring-expand 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Equilibre-se — completion text entrance ────────────────────────────── */
+@keyframes complete-text-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.complete-text-in {
+  animation: complete-text-in 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
+}
