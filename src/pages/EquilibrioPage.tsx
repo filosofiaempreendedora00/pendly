@@ -229,7 +229,7 @@ const EquilibrioPage = () => {
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'rgba(255,255,255,0.95)' }}>
-            Volte pro eixo
+            Você de volta ao eixo
           </h1>
           {/* Subtitle — more readable */}
           <p className="text-sm mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
