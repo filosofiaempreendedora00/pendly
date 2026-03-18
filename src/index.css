@@ -337,3 +337,12 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ── Equilibre-se — axis dot glow on completion ────────────────────────── */
+@keyframes axis-glow {
+  0%, 100% { box-shadow: 0 0 0 0   hsl(var(--primary) / 0.35); }
+  50%       { box-shadow: 0 0 0 10px hsl(var(--primary) / 0);   }
+}
+.axis-dot-glow {
+  animation: axis-glow 1.8s ease-in-out infinite;
+}

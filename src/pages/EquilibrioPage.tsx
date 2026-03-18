@@ -1,161 +1,253 @@
-import { useState, useEffect } from 'react';
-import { getEntriesForDate, getTodayKey, getAveragePosition } from '@/lib/pendulum';
-import { generateInterventionSession, InterventionCard, TipoIntervencao } from '@/lib/interventions';
-import { Button } from '@/components/ui/button';
-import { Check, Leaf, MessageCircle, Sparkles, Zap, Wind } from 'lucide-react';
+import { useState } from 'react';
 
-// ─── Tipo configuration (icon + label per intervention type) ─────────────────
+/* ── Types ──────────────────────────────────────────────────────────────── */
+type Focus = 'past' | 'present' | 'future';
 
-const TIPO_CONFIG: Record<TipoIntervencao, {
-  label: string;
-  icon: React.ReactNode;
-  badgeClass: string;
-}> = {
-  pergunta: {
-    label: 'Reflexão',
-    icon: <MessageCircle size={13} />,
-    badgeClass: 'text-primary bg-primary/10',
-  },
-  reframing: {
-    label: 'Novo olhar',
-    icon: <Sparkles size={13} />,
-    badgeClass: 'text-violet-600 bg-violet-500/10',
-  },
-  micro_acao: {
-    label: 'Ação pequena',
-    icon: <Zap size={13} />,
-    badgeClass: 'text-amber-600 bg-amber-500/10',
-  },
-  respiracao: {
-    label: 'Respiração',
-    icon: <Wind size={13} />,
-    badgeClass: 'text-sky-600 bg-sky-500/10',
-  },
+interface StepDef {
+  text: string;
+  type: 'yesno' | 'action';
+  label?: string;
+}
+
+/* ── Intervention flows ─────────────────────────────────────────────────── */
+const INTERVENTIONS: Record<Focus, StepDef[]> = {
+  past: [
+    { text: 'Isso ainda está acontecendo agora?',  type: 'yesno' },
+    { text: 'Isso está sob seu controle hoje?',     type: 'yesno' },
+    { text: 'Observe o ambiente ao seu redor',      type: 'action', label: 'Feito' },
+  ],
+  future: [
+    { text: 'Isso está acontecendo agora?',         type: 'yesno' },
+    { text: 'Você pode agir sobre isso agora?',     type: 'yesno' },
+    { text: 'Respire fundo 3 vezes',                type: 'action', label: 'Concluir' },
+  ],
+  present: [
+    { text: 'Você está consciente do momento atual?',      type: 'yesno' },
+    { text: 'Perceba sua respiração por alguns segundos',   type: 'action', label: 'Feito' },
+  ],
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
+/* Dot starting position in px relative to centre of axis */
+const START_X: Record<Focus, number> = { past: -74, future: 74, present: 0 };
 
+/* ── Haptic helper ──────────────────────────────────────────────────────── */
+const haptic = (pattern: number | number[]) => {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+};
+
+/* ── Component ──────────────────────────────────────────────────────────── */
 const EquilibrioPage = () => {
-  const [position, setPosition] = useState<number | null>(null);
-  const [session, setSession] = useState<InterventionCard[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [completed, setCompleted] = useState(false);
-  const [fading, setFading] = useState(false);
+  const [focus,    setFocus]    = useState<Focus | null>(null);
+  const [step,     setStep]     = useState(0);
+  const [complete, setComplete] = useState(false);
+  const [dotX,     setDotX]     = useState(20);   // slight rightward offset at start
+  const [fading,   setFading]   = useState(false);
 
-  useEffect(() => {
-    const todayEntries = getEntriesForDate(getTodayKey());
-    if (todayEntries.length > 0) {
-      const pos = getAveragePosition(todayEntries);
-      setPosition(pos);
-      setSession(generateInterventionSession(pos));
-    }
-  }, []);
-
-  // ── No pendulum registered yet ────────────────────────────────────────────
-  if (position === null) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen pb-24 px-6 text-center">
-        <Leaf size={40} className="text-primary/40 mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">
-          Registre seu pêndulo primeiro
-        </h2>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Vá até a tela Pêndulo e registre como você está se sentindo agora.
-        </p>
-      </div>
-    );
-  }
-
-  // ── Session completed ─────────────────────────────────────────────────────
-  if (completed) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen pb-24 px-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center mb-5">
-          <Check size={24} className="text-primary" />
-        </div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">
-          Sessão concluída
-        </h2>
-        <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-          Pequenos ajustes ajudam seu pêndulo a voltar ao eixo.
-        </p>
-      </div>
-    );
-  }
-
-  const card = session[currentIdx];
-  if (!card) return null;
-
-  const tipo     = TIPO_CONFIG[card.tipo];
-  const isLast   = currentIdx === session.length - 1;
-  const total    = session.length;
-
-  const handleContinuar = () => {
+  /* Fade helper — runs callback after content fades out, then fades back in */
+  const advance = (cb: () => void) => {
     setFading(true);
-    setTimeout(() => {
-      if (isLast) {
-        setCompleted(true);
-      } else {
-        setCurrentIdx(prev => prev + 1);
-      }
-      setFading(false);
-    }, 180);
+    setTimeout(() => { cb(); setFading(false); }, 190);
   };
 
-  return (
-    <div className="flex flex-col min-h-screen bg-muted/30">
-      <div className="flex-1 px-6 pt-14 pb-36 overflow-y-auto">
+  /* Select which mental zone is pulling the user */
+  const handleFocusSelect = (f: Focus) => {
+    haptic(8);
+    advance(() => {
+      setFocus(f);
+      setStep(0);
+      setDotX(START_X[f]);
+    });
+  };
 
-        {/* Progress bar — one segment per intervention */}
-        <div className="flex gap-1.5 mb-10">
-          {Array.from({ length: total }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                i <= currentIdx ? 'bg-primary' : 'bg-muted'
-              }`}
-            />
-          ))}
+  /* Advance through the intervention steps */
+  const handleStepAdvance = () => {
+    if (!focus) return;
+    haptic(8);
+    const steps    = INTERVENTIONS[focus];
+    const nextStep = step + 1;
+
+    advance(() => {
+      if (nextStep >= steps.length) {
+        setDotX(0);
+        setComplete(true);
+        haptic([10, 60, 18]);
+      } else {
+        const startX   = START_X[focus];
+        const progress = nextStep / steps.length;
+        setDotX(startX * (1 - progress));
+        setStep(nextStep);
+      }
+    });
+  };
+
+  /* Reset everything */
+  const handleReset = () => {
+    haptic(8);
+    setFocus(null);
+    setStep(0);
+    setComplete(false);
+    setDotX(20);
+    setFading(false);
+  };
+
+  const currentSteps = focus ? INTERVENTIONS[focus] : [];
+  const currentStep  = currentSteps[step];
+
+  /* ── Axis ─────────────────────────────────────────────────────────────── */
+  const Axis = () => (
+    <div className="relative w-full flex items-center justify-center" style={{ height: 64 }}>
+
+      {/* Horizontal line */}
+      <div className="absolute left-8 right-8 h-px bg-border/50" />
+
+      {/* Static centre marker */}
+      <div
+        className={`absolute left-1/2 -translate-x-1/2 w-2 h-2 rounded-full transition-colors duration-500 ${
+          complete ? 'bg-primary/35' : 'bg-border/55'
+        }`}
+      />
+
+      {/* Animated dot */}
+      <div
+        className={`absolute left-1/2 w-[18px] h-[18px] rounded-full bg-primary shadow-md ${
+          complete ? 'axis-dot-glow' : ''
+        }`}
+        style={{
+          transform:  `translateX(calc(-50% + ${dotX}px))`,
+          transition: 'transform 640ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        }}
+      />
+
+      {/* Labels — below the line */}
+      <div
+        className="absolute left-8 right-8 flex justify-between"
+        style={{ top: 'calc(50% + 18px)' }}
+      >
+        <span className="text-[8px] text-muted-foreground/40 uppercase tracking-widest">
+          Passado
+        </span>
+        <span
+          className={`text-[8px] uppercase tracking-widest transition-colors duration-500 ${
+            complete ? 'text-primary font-semibold' : 'text-muted-foreground/55'
+          }`}
+        >
+          Presente
+        </span>
+        <span className="text-[8px] text-muted-foreground/40 uppercase tracking-widest">
+          Futuro
+        </span>
+      </div>
+    </div>
+  );
+
+  /* ── Render ───────────────────────────────────────────────────────────── */
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <div className="flex-1 flex flex-col px-6 pt-14 pb-36 max-w-md mx-auto w-full">
+
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Voltar ao eixo
+          </h1>
+          <p className="text-xs text-muted-foreground/55 mt-1.5">
+            Um momento para se recentrar
+          </p>
         </div>
 
-        {/* Card — fades between transitions */}
+        {/* Temporal axis */}
+        <Axis />
+
+        {/* Content area — fades between states */}
         <div
-          className={`flex flex-col gap-7 transition-opacity duration-200 ${
+          className={`flex flex-col flex-1 mt-12 transition-opacity duration-200 ${
             fading ? 'opacity-0' : 'opacity-100'
           }`}
         >
-          {/* Tipo badge */}
-          <span className={`inline-flex items-center gap-1.5 self-start px-3 py-1.5 rounded-full text-xs font-medium ${tipo.badgeClass}`}>
-            {tipo.icon}
-            {tipo.label}
-          </span>
 
-          {/* Intervention text */}
-          <p className="text-[1.2rem] font-medium text-foreground leading-relaxed">
-            {card.texto}
-          </p>
-        </div>
-      </div>
+          {/* ── COMPLETE ── */}
+          {complete && (
+            <div className="flex flex-col items-center justify-center flex-1 gap-5 text-center">
+              <p className="text-xl font-semibold text-foreground leading-snug">
+                Você voltou pro eixo.
+              </p>
+              <p className="text-sm text-muted-foreground/55 max-w-[220px] leading-relaxed">
+                Sua mente encontrou o presente.
+              </p>
+              <button
+                onClick={handleReset}
+                className="mt-3 text-[12px] text-muted-foreground/40 hover:text-muted-foreground/65 transition-colors"
+              >
+                Recomeçar
+              </button>
+            </div>
+          )}
 
-      {/* Gradient fade behind button */}
-      <div className="fixed left-0 right-0 bottom-[60px] h-24 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none z-30" />
+          {/* ── INITIAL — focus selection ── */}
+          {!complete && focus === null && (
+            <div className="flex flex-col gap-5">
+              <p className="text-[15px] font-medium text-foreground/80 text-center leading-snug px-2">
+                O que mais está puxando sua mente agora?
+              </p>
 
-      {/* Fixed bottom CTA */}
-      <div className="fixed left-0 right-0 bottom-20 z-40 px-6 pointer-events-none">
-        <div className="max-w-md mx-auto pointer-events-auto">
-          <Button
-            onClick={handleContinuar}
-            className="w-full rounded-full h-12 text-sm font-medium"
-            style={{
-              boxShadow: '0 -10px 40px -10px hsl(var(--background)), 0 4px 15px -3px hsl(var(--primary) / 0.2)',
-            }}
-          >
-            {isLast
-              ? <><Check size={15} className="mr-1.5" /> Concluir</>
-              : 'Continuar'
-            }
-          </Button>
-        </div>
+              <div className="flex flex-col gap-3 mt-2">
+                {(
+                  [
+                    { key: 'past',    label: 'Algo que já aconteceu'        },
+                    { key: 'future',  label: 'Algo que pode acontecer'      },
+                    { key: 'present', label: 'O que está acontecendo agora' },
+                  ] as { key: Focus; label: string }[]
+                ).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleFocusSelect(key)}
+                    className="w-full py-3.5 px-5 rounded-full border border-border/60 text-[13px] font-medium text-foreground/70 hover:border-primary/40 hover:text-primary hover:bg-primary/5 active:scale-[0.98] transition-all duration-150 text-center"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── INTERVENTION STEP ── */}
+          {!complete && focus !== null && currentStep && (
+            <div className="flex flex-col gap-8">
+
+              {/* Step prompt */}
+              <p className="text-[17px] font-medium text-foreground leading-snug text-center px-2">
+                {currentStep.text}
+              </p>
+
+              {/* Buttons */}
+              {currentStep.type === 'yesno' ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleStepAdvance}
+                    className="flex-1 py-3 rounded-full border border-border/60 text-[13px] font-medium text-foreground/70 hover:border-primary/40 hover:text-primary hover:bg-primary/5 active:scale-[0.97] transition-all duration-150"
+                  >
+                    Sim
+                  </button>
+                  <button
+                    onClick={handleStepAdvance}
+                    className="flex-1 py-3 rounded-full border border-border/60 text-[13px] font-medium text-foreground/70 hover:border-primary/40 hover:text-primary hover:bg-primary/5 active:scale-[0.97] transition-all duration-150"
+                  >
+                    Não
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleStepAdvance}
+                  className="w-full py-3.5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold active:scale-[0.98] transition-all duration-150 shadow-sm"
+                  style={{ boxShadow: '0 4px 18px -4px hsl(var(--primary) / 0.35)' }}
+                >
+                  {currentStep.label ?? 'Concluir'}
+                </button>
+              )}
+            </div>
+          )}
+
+        </div>{/* end content area */}
       </div>
     </div>
   );
