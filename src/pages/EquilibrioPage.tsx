@@ -183,30 +183,34 @@ const EquilibrioPage = () => {
         }}
       />
 
-      {/* Labels — more visible */}
-      <div
-        className="absolute flex justify-between"
-        style={{ left: 16, right: 16, top: 'calc(50% + 22px)' }}
-      >
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Passado
-        </span>
-        <span
-          style={{
-            fontSize:      9,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color:      complete ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)',
-            fontWeight: complete ? 700 : 400,
-            transition: 'color 0.5s, font-weight 0.5s',
-          }}
-        >
-          Presente
-        </span>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Futuro
-        </span>
-      </div>
+      {/* Labels — anchored to the same x positions as START_X so dot is always above the word */}
+      {(['past', 'present', 'future'] as Zone[]).map((z) => {
+        const offset = z === 'past' ? START_X.past : z === 'future' ? START_X.future : 0;
+        const label  = z === 'past' ? 'Passado' : z === 'future' ? 'Futuro' : 'Presente';
+        const isPresente = z === 'present';
+        return (
+          <span
+            key={z}
+            className="absolute"
+            style={{
+              left:          '50%',
+              top:           'calc(50% + 22px)',
+              transform:     `translateX(calc(-50% + ${offset}px))`,
+              fontSize:      9,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              whiteSpace:    'nowrap',
+              color:      isPresente
+                ? (complete ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.55)')
+                : 'rgba(255,255,255,0.50)',
+              fontWeight: isPresente && complete ? 700 : 400,
+              transition: 'color 0.5s',
+            }}
+          >
+            {label}
+          </span>
+        );
+      })}
     </div>
   );
 
