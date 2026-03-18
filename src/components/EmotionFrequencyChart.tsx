@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { getEntries } from '@/lib/pendulum';
+import { getEntries, ALL_STANDARD_EMOTIONS } from '@/lib/pendulum';
+import { CUSTOM_COLOR } from '@/components/CustomEmotionPicker';
 
 interface Props {
   refreshKey?: number;
@@ -45,35 +46,45 @@ const EmotionFrequencyChart = ({ refreshKey = 0 }: Props) => {
     emotion, count, index, blurLevel,
   }: {
     emotion: string; count: number; index: number; blurLevel?: { blur: number; opacity: number };
-  }) => (
-    <div
-      className="flex items-center gap-2.5"
-      style={
-        blurLevel
-          ? { filter: `blur(${blurLevel.blur}px)`, opacity: blurLevel.opacity, userSelect: 'none', pointerEvents: 'none' }
-          : undefined
-      }
-    >
-      <span className="text-[9px] text-muted-foreground/30 w-3.5 text-right shrink-0 tabular-nums font-bold">
-        {index + 1}
-      </span>
+  }) => {
+    const isCustom = !ALL_STANDARD_EMOTIONS.has(emotion);
 
-      <span className="text-[11px] text-foreground/80 font-medium capitalize w-[90px] shrink-0 truncate">
-        {emotion}
-      </span>
+    return (
+      <div
+        className="flex items-center gap-2.5"
+        style={
+          blurLevel
+            ? { filter: `blur(${blurLevel.blur}px)`, opacity: blurLevel.opacity, userSelect: 'none', pointerEvents: 'none' }
+            : undefined
+        }
+      >
+        <span className="text-[9px] text-muted-foreground/30 w-3.5 text-right shrink-0 tabular-nums font-bold">
+          {index + 1}
+        </span>
 
-      <div className="flex-1 relative h-3 rounded-full bg-muted/30 overflow-hidden">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-primary/70"
-          style={{ width: `${(count / max) * 100}%` }}
-        />
+        <span
+          className={`text-[11px] font-medium capitalize w-[90px] shrink-0 truncate ${isCustom ? '' : 'text-foreground/80'}`}
+          style={isCustom ? { color: CUSTOM_COLOR } : undefined}
+        >
+          {isCustom ? `✦ ${emotion}` : emotion}
+        </span>
+
+        <div className="flex-1 relative h-3 rounded-full bg-muted/30 overflow-hidden">
+          <div
+            className={`absolute inset-y-0 left-0 rounded-full ${isCustom ? '' : 'bg-primary/70'}`}
+            style={{
+              width: `${(count / max) * 100}%`,
+              ...(isCustom ? { backgroundColor: `${CUSTOM_COLOR}b0` } : {}),
+            }}
+          />
+        </div>
+
+        <span className="text-[10px] text-muted-foreground/40 tabular-nums shrink-0 w-4 text-right font-medium">
+          {count}
+        </span>
       </div>
-
-      <span className="text-[10px] text-muted-foreground/40 tabular-nums shrink-0 w-4 text-right font-medium">
-        {count}
-      </span>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="mt-10">
