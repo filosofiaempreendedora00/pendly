@@ -67,7 +67,7 @@ const ZONE_OPTIONS: {
 ];
 
 /* Dot start positions (px from axis centre) */
-const START_X: Record<Zone, number> = { past: -108, future: 108, present: 0 };
+const START_X: Record<Zone, number> = { past: -140, future: 140, present: 0 };
 
 /* ── Haptic ─────────────────────────────────────────────────────────────── */
 const haptic = (pattern: number | number[]) => {
