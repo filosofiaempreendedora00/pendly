@@ -20,9 +20,12 @@ export function IntroScreen({ onComplete }: IntroScreenProps) {
   }, [onComplete]);
 
   return (
-    <div className={`intro-overlay ${fadeOut ? 'intro-fade-out' : 'intro-fade-in'}`}>
+    <div className={`intro-overlay ${fadeOut ? 'intro-fade-out' : ''}`}>
       {/* Layered gradient background */}
       <div className="intro-bg" />
+
+      {/* Content fades in independently so the overlay background is instant */}
+      <div className="intro-content intro-fade-in">
 
       {/* Pendulum */}
       <div className="intro-pendulum-wrap">
@@ -106,6 +109,8 @@ export function IntroScreen({ onComplete }: IntroScreenProps) {
           E encontre seu equilíbrio.
         </p>
       </div>
+
+      </div>{/* end intro-content */}
     </div>
   );
 }

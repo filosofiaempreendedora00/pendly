@@ -267,6 +267,18 @@
 .intro-fade-in  { animation: intro-appear    0.9s ease-out forwards; }
 .intro-fade-out { animation: intro-disappear 1.1s ease-in-out forwards; }
 
+/* Inner content wrapper — fades in while the overlay background stays solid */
+.intro-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
 /* Pendulum container — pivot sits at its top-center */
 .intro-pendulum-wrap {
   position: relative;
