@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Zap, Crosshair } from 'lucide-react';
+import { History, AlertCircle, Target } from 'lucide-react';
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type Zone = 'past' | 'present' | 'future';
@@ -28,7 +28,7 @@ const INTERVENTIONS: Record<Zone, StepDef[]> = {
   ],
 };
 
-/* Focus options */
+/* Focus options — order: past, future, present (present last = different category) */
 const ZONE_OPTIONS: {
   key: Zone;
   label: string;
@@ -36,30 +36,33 @@ const ZONE_OPTIONS: {
   iconColor: string;
   borderColor: string;
   bgColor: string;
+  labelColor?: string;
 }[] = [
   {
     key: 'past',
-    label: 'Em algo que já aconteceu',
-    Icon: Clock,
-    iconColor:   'rgba(147,197,253,0.85)',
+    label: 'Em coisas que já aconteceram',
+    Icon: History,
+    iconColor:   'rgba(147,197,253,0.85)',   // blue — past
     borderColor: 'rgba(147,197,253,0.22)',
     bgColor:     'rgba(147,197,253,0.07)',
   },
   {
-    key: 'present',
-    label: 'Em algo que está acontecendo agora',
-    Icon: Crosshair,
-    iconColor:   'rgba(255,255,255,0.80)',
-    borderColor: 'rgba(255,255,255,0.22)',
-    bgColor:     'rgba(255,255,255,0.07)',
-  },
-  {
     key: 'future',
-    label: 'Em algo que pode acontecer',
-    Icon: Zap,
-    iconColor:   'rgba(196,181,253,0.90)',
+    label: 'Em coisas que ainda podem acontecer',
+    Icon: AlertCircle,
+    iconColor:   'rgba(196,181,253,0.90)',   // violet — future worry
     borderColor: 'rgba(196,181,253,0.22)',
     bgColor:     'rgba(196,181,253,0.07)',
+  },
+  {
+    /* Present last — visually distinct: green = grounding, not a "problem" */
+    key: 'present',
+    label: 'Em coisas que estão acontecendo agora',
+    Icon: Target,
+    iconColor:   'rgba(134,239,172,0.90)',   // green — present, grounded
+    borderColor: 'rgba(134,239,172,0.25)',
+    bgColor:     'rgba(134,239,172,0.07)',
+    labelColor:  'rgba(134,239,172,0.80)',
   },
 ];
 
@@ -269,7 +272,7 @@ const EquilibrioPage = () => {
               </p>
 
               <div className="flex flex-col gap-3 mt-1">
-                {ZONE_OPTIONS.map(({ key, label, Icon, iconColor, borderColor, bgColor }) => (
+                {ZONE_OPTIONS.map(({ key, label, Icon, iconColor, borderColor, bgColor, labelColor }) => (
                   <button
                     key={key}
                     onClick={() => handleZoneSelect(key)}
@@ -282,7 +285,7 @@ const EquilibrioPage = () => {
                     >
                       <Icon size={16} style={{ color: iconColor }} />
                     </span>
-                    <span className="text-[14px] font-medium" style={{ color: 'rgba(255,255,255,0.80)' }}>
+                    <span className="text-[14px] font-medium" style={{ color: labelColor ?? 'rgba(255,255,255,0.80)' }}>
                       {label}
                     </span>
                   </button>
