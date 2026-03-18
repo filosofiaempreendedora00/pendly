@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { TrendingUp, BookHeart } from 'lucide-react';
+import { TrendingUp, BookHeart, FlaskConical } from 'lucide-react';
 
 const PendulumIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeWidth?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -19,10 +19,11 @@ const AxisIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeWidth
 );
 
 const tabs = [
-  { path: '/',           icon: PendulumIcon, label: 'Pêndulo'     },
-  { path: '/biblioteca', icon: BookHeart,    label: 'Biblioteca'  },
-  { path: '/padroes',    icon: TrendingUp,   label: 'Evolução'    },
-  { path: '/equilibrio', icon: AxisIcon,     label: 'Equilibre-se'},
+  { path: '/',           icon: PendulumIcon, label: 'Pêndulo'      },
+  { path: '/biblioteca', icon: BookHeart,    label: 'Biblioteca'   },
+  { path: '/equilibrio', icon: AxisIcon,     label: 'Equilibre-se' },
+  { path: '/padroes',    icon: TrendingUp,   label: 'Evolução'     },
+  { path: '/cabide',     icon: FlaskConical, label: 'Armário'      },
 ];
 
 const BottomNav = () => {
@@ -41,7 +42,7 @@ const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-md grid-cols-4 items-center py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="mx-auto grid max-w-md grid-cols-5 items-center py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {tabs.map(({ path, icon: Icon, label }) => {
           const active  = location.pathname === path;
           const popping = tapped === path;
