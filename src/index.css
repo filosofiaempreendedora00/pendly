@@ -346,3 +346,12 @@
 .axis-dot-glow {
   animation: axis-glow 1.8s ease-in-out infinite;
 }
+
+/* ── Equilibre-se — white glow on dark background ──────────────────────── */
+@keyframes axis-glow-dark {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(255,255,255,0.40); }
+  50%       { box-shadow: 0 0 0 12px rgba(255,255,255,0);   }
+}
+.axis-dot-glow-dark {
+  animation: axis-glow-dark 1.8s ease-in-out infinite;
+}
