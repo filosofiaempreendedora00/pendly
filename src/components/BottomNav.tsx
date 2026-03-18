@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { TrendingUp, BookHeart, FlaskConical } from 'lucide-react';
+import { TrendingUp, BookHeart, FlaskConical, Scale } from 'lucide-react';
 
 const PendulumIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeWidth?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -10,18 +10,10 @@ const PendulumIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeW
   </svg>
 );
 
-/* Axis line + centred dot — represents the "Voltar ao eixo" concept */
-const AxisIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeWidth?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round">
-    <line x1="3" y1="12" x2="21" y2="12" />
-    <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" />
-  </svg>
-);
-
 const tabs = [
   { path: '/',           icon: PendulumIcon, label: 'Pêndulo'      },
   { path: '/biblioteca', icon: BookHeart,    label: 'Biblioteca'   },
-  { path: '/equilibrio', icon: AxisIcon,     label: 'Equilibre-se' },
+  { path: '/equilibrio', icon: Scale,        label: 'Equilibre-se' },
   { path: '/padroes',    icon: TrendingUp,   label: 'Evolução'     },
   { path: '/cabide',     icon: FlaskConical, label: 'Armário'      },
 ];

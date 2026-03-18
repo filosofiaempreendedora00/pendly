@@ -212,6 +212,17 @@ const EquilibrioPage = () => {
     <div className="flex flex-col" style={BG}>
       <div className="flex-1 flex flex-col px-6 pt-14 max-w-md mx-auto w-full" style={{ minHeight: '100vh' }}>
 
+        {/* Disclaimer — em construção */}
+        <div
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl mb-6"
+          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
+        >
+          <span style={{ fontSize: 14 }}>🚧</span>
+          <p className="text-[11px] leading-snug" style={{ color: 'rgba(255,255,255,0.50)' }}>
+            Esta tela está em construção. Algumas coisas ainda vão mudar.
+          </p>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'rgba(255,255,255,0.95)' }}>
