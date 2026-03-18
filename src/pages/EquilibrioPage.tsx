@@ -268,7 +268,7 @@ const EquilibrioPage = () => {
           {!complete && zone === null && (
             <div className="flex flex-col gap-5">
               <p className="text-[16px] font-semibold text-center leading-snug px-2" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                Onde está sua mente?
+                Onde sua mente está focada?
               </p>
 
               <div className="flex flex-col gap-3 mt-1">
