@@ -452,12 +452,14 @@ const EquilibrioPage = () => {
         <div className="flex-1 overflow-y-auto min-h-0 px-6 pt-14 pb-4">
 
           {/* ── Disclaimer ───────────────────────────────────────────────── */}
-          <div className="flex items-center justify-center gap-1.5 mb-6">
-            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(196,181,253,0.60)' }} />
-            <span className="text-[10px] font-medium tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.28)', letterSpacing: '0.14em' }}>
-              Em desenvolvimento
-            </span>
-            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(196,181,253,0.60)' }} />
+          <div className="mb-6 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex gap-3 items-start">
+            <span className="text-base shrink-0 mt-px">🚧</span>
+            <div>
+              <p className="text-[11px] font-bold text-amber-800 mb-0.5 uppercase tracking-wide">Em desenvolvimento</p>
+              <p className="text-[11px] text-amber-700 leading-relaxed">
+                Esta tela está em construção. Algumas funcionalidades podem mudar ou não funcionar como esperado.
+              </p>
+            </div>
           </div>
 
           {/* ── GATED ─────────────────────────────────────────────────────── */}
