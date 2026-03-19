@@ -13,7 +13,7 @@ const PendulumIcon = ({ size = 22, strokeWidth = 1.6 }: { size?: number; strokeW
 const tabs = [
   { path: '/',           icon: PendulumIcon, label: 'Pêndulo'      },
   { path: '/biblioteca', icon: BookHeart,    label: 'Biblioteca'   },
-  { path: '/equilibrio', icon: Scale,        label: 'Equilibre-se' },
+  { path: '/equilibrio', icon: Scale,        label: 'Reequilibre-se' },
   { path: '/padroes',    icon: TrendingUp,   label: 'Evolução'     },
   { path: '/cabide',     icon: FlaskConical, label: 'Armário'      },
 ];

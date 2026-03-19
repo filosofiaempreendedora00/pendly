@@ -451,12 +451,21 @@ const EquilibrioPage = () => {
         {/* ── Scrollable content ──────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto min-h-0 px-6 pt-14 pb-4">
 
+          {/* ── Disclaimer ───────────────────────────────────────────────── */}
+          <div className="flex items-center justify-center gap-1.5 mb-6">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(196,181,253,0.60)' }} />
+            <span className="text-[10px] font-medium tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.28)', letterSpacing: '0.14em' }}>
+              Em desenvolvimento
+            </span>
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(196,181,253,0.60)' }} />
+          </div>
+
           {/* ── GATED ─────────────────────────────────────────────────────── */}
           {phase === 'gated' && (
             <div className="flex flex-col items-center justify-center" style={{ minHeight: '70vh' }}>
               <div className="text-center mb-10">
                 <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'rgba(255,255,255,0.95)' }}>
-                  Equilibre-se
+                  Reequilibre-se
                 </h1>
               </div>
 
@@ -492,13 +501,46 @@ const EquilibrioPage = () => {
           {/* ── ENTRY ─────────────────────────────────────────────────────── */}
           {phase === 'entry' && (
             <>
-              <div className="text-center mb-10">
+              {/* Title */}
+              <div className="text-center mb-3">
                 <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'rgba(255,255,255,0.95)' }}>
-                  Você de volta ao eixo
+                  Reequilibre-se
                 </h1>
-                <p className="text-sm mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                  Um momento para se reequilibrar.
-                </p>
+              </div>
+
+              {/* Mini pendulum */}
+              <div className="flex justify-center mb-7">
+                <svg
+                  width="48"
+                  height="76"
+                  viewBox="0 0 48 76"
+                  style={{ overflow: 'visible', display: 'block' }}
+                >
+                  <defs>
+                    <radialGradient id="eq-bob-grad" cx="42%" cy="38%" r="60%">
+                      <stop offset="0%"   stopColor="rgba(195,218,255,0.82)" />
+                      <stop offset="55%"  stopColor="rgba(78,128,210,0.88)" />
+                      <stop offset="100%" stopColor="rgba(22,58,148,0.94)" />
+                    </radialGradient>
+                    <filter id="eq-bob-glow" x="-40%" y="-40%" width="180%" height="180%">
+                      <feGaussianBlur stdDeviation="2.5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  {/* Pivot dot */}
+                  <circle cx="24" cy="0" r="2.5" fill="rgba(255,255,255,0.70)" />
+                  {/* Arm — rotates around its own top-center */}
+                  <g
+                    className="intro-pendulum-arm"
+                    style={{ transformBox: 'fill-box', transformOrigin: 'top center' }}
+                  >
+                    <line x1="24" y1="0" x2="24" y2="58" stroke="rgba(255,255,255,0.55)" strokeWidth="1.4" strokeLinecap="round" />
+                    <circle cx="24" cy="66" r="9" fill="url(#eq-bob-grad)" filter="url(#eq-bob-glow)" />
+                  </g>
+                </svg>
               </div>
 
               <div className={`flex flex-col gap-5 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}>
@@ -547,12 +589,6 @@ const EquilibrioPage = () => {
         {/* ── SESSION ─────────────────────────────────────────────────────── */}
         {phase === 'session' && curTurn && (
           <>
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'rgba(255,255,255,0.95)' }}>
-                Você de volta ao eixo
-              </h1>
-            </div>
-
             <div className={`flex flex-col gap-6 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}>
               {curTurn.validation && (
                 <p
@@ -596,12 +632,6 @@ const EquilibrioPage = () => {
         {/* ── COMPLETE ──────────────────────────────────────────────────────── */}
         {phase === 'complete' && (
           <>
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'rgba(255,255,255,0.95)' }}>
-                Você de volta ao eixo
-              </h1>
-            </div>
-
             <div className="flex flex-col items-center gap-6 text-center complete-text-in pt-8">
               <p className="text-2xl font-bold leading-snug" style={{ color: 'rgba(255,255,255,0.95)' }}>
                 Você voltou pro eixo.
